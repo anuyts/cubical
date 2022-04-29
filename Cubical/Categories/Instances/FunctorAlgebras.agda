@@ -62,6 +62,16 @@ module _ {C : Category ℓC ℓC'} (F : Functor C C) where
       (strHom algF) (strHom algG))))
     i
 
+  AlgebraHomPathP : {algA algB algA' algB' : Algebra} {ealgA : algA ≡ algA'} {ealgB : algB ≡ algB'}
+    {algF : AlgebraHom algA algB} {algF' : AlgebraHom algA' algB'}
+    → PathP (λ i →  C [ carrier (ealgA i) , carrier (ealgB i) ]) (carrierHom algF) (carrierHom algF')
+    → PathP (λ i → AlgebraHom (ealgA i) (ealgB i)) algF algF'
+  carrierHom (AlgebraHomPathP {ealgA = ealgA} {ealgB} {algF} {algF'} p i) = p i
+  strHom (AlgebraHomPathP {ealgA = ealgA} {ealgB} {algF} {algF'} p i) = idfun
+    (PathP (λ j → p j ∘⟨ C ⟩ str (ealgA j) ≡ str (ealgB j) ∘⟨ C ⟩ F-hom F (p j)) (strHom algF) (strHom algF'))
+    (fst (idfun (isContr _) (isOfHLevelPathP' 0 (isOfHLevelPath' 1 (isSetHom C) _ _) (strHom algF) (strHom algF'))))
+    i
+
   idAlgebraHom : {algA : Algebra} → AlgebraHom algA algA
   carrierHom (idAlgebraHom {algA}) = id C
   strHom (idAlgebraHom {algA}) =
