@@ -1,7 +1,7 @@
 {- Basic theory about transport:
 
 - transport is invertible
-- transport is an equivalence ([transportEquiv])
+- transport is an equivalence ([pathToEquiv])
 
 -}
 {-# OPTIONS --safe #-}
@@ -59,14 +59,6 @@ transportTransport⁻ : ∀ {ℓ} {A B : Type ℓ} → (p : A ≡ B) → (b : B)
                         transport p (transport⁻ p b) ≡ b
 transportTransport⁻ p b j = transport-fillerExt⁻ p j (transport⁻-fillerExt⁻ p j b)
 
--- Transport is an equivalence
-isEquivTransport : ∀ {ℓ} {A B : Type ℓ} (p : A ≡ B) → isEquiv (transport p)
-isEquivTransport {A = A} {B = B} p =
-  transport (λ i → isEquiv (transport-fillerExt p i)) (idIsEquiv A)
-
-transportEquiv : ∀ {ℓ} {A B : Type ℓ} → A ≡ B → A ≃ B
-transportEquiv p = (transport p , isEquivTransport p)
-
 substEquiv : ∀ {ℓ ℓ'} {A : Type ℓ} {a a' : A} (P : A → Type ℓ') (p : a ≡ a') → P a ≃ P a'
 substEquiv P p = (subst P p , isEquivTransport (λ i → P (p i)))
 
@@ -79,10 +71,10 @@ transpEquiv P i .snd
   = transp (λ k → isEquiv (transp (λ j → P (i ∨ (j ∧ k))) (i ∨ ~ k)))
       i (idIsEquiv (P i))
 
-uaTransportη : ∀ {ℓ} {A B : Type ℓ} (P : A ≡ B) → ua (transportEquiv P) ≡ P
+uaTransportη : ∀ {ℓ} {A B : Type ℓ} (P : A ≡ B) → ua (pathToEquiv P) ≡ P
 uaTransportη P i j
   = Glue (P i1) λ where
-      (j = i0) → P i0 , transportEquiv P
+      (j = i0) → P i0 , pathToEquiv P
       (i = i1) → P j , transpEquiv P j
       (j = i1) → P i1 , idEquiv (P i1)
 
@@ -130,13 +122,21 @@ transportComposite : ∀ {ℓ} {A B C : Type ℓ} (p : A ≡ B) (q : B ≡ C) (x
 transportComposite = substComposite (λ D → D)
 
 -- substitution commutes with morphisms in slices
-substCommSlice : ∀ {ℓ ℓ'} {A : Type ℓ}
-                   → (B C : A → Type ℓ')
-                   → (F : ∀ i → B i → C i)
+substCommSlice : ∀ {ℓ ℓ′} {A : Type ℓ}
+                   → (B C : A → Type ℓ′)
+                   → (F : ∀ a → B a → C a)
                    → {x y : A} (p : x ≡ y) (u : B x)
                    → subst C p (F x u) ≡ F y (subst B p u)
-substCommSlice B C F p Bx i =
-  transport-fillerExt⁻ (cong C p) i (F _ (transport-fillerExt (cong B p) i Bx))
+substCommSlice B C F p Bx a =
+  transport-fillerExt⁻ (cong C p) a (F _ (transport-fillerExt (cong B p) a Bx))
+
+constSubstCommSlice : ∀ {ℓ ℓ'} {A : Type ℓ}
+                   → (B : A → Type ℓ')
+                   → (C : Type ℓ')
+                   → (F : ∀ a → B a → C)
+                   → {x y : A} (p : x ≡ y) (u : B x)
+                   →  (F x u) ≡ F y (subst B p u)
+constSubstCommSlice B C F p Bx = (sym (transportRefl (F _ Bx)) ∙ substCommSlice B (λ _ → C) F p Bx)
 
 -- transporting over (λ i → B (p i) → C (p i)) divides the transport into
 -- transports over (λ i → C (p i)) and (λ i → B (p (~ i)))

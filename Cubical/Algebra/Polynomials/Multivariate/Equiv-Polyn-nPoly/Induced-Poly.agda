@@ -1,5 +1,5 @@
 {-# OPTIONS --safe --experimental-lossy-unification #-}
-module Cubical.Algebra.Polynomials.Multivariate.Equiv.Induced-Poly where
+module Cubical.Algebra.Polynomials.Multivariate.Equiv-Polyn-nPoly.Induced-Poly where
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
@@ -7,6 +7,7 @@ open import Cubical.Foundations.Isomorphism
 
 open import Cubical.Data.Nat renaming (_+_ to _+n_; _·_ to _·n_)
 open import Cubical.Data.Vec
+open import Cubical.Data.Vec.OperationsNat
 open import Cubical.Data.Sigma
 
 open import Cubical.Algebra.Ring

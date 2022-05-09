@@ -1,11 +1,12 @@
 {-# OPTIONS --safe --experimental-lossy-unification #-}
-module Cubical.Algebra.Polynomials.Multivariate.Equiv.Poly1-Poly where
+module Cubical.Algebra.Polynomials.Multivariate.Equiv-Polyn-nPoly.Poly1-Poly where
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Isomorphism
 
 open import Cubical.Data.Nat renaming (_+_ to _+n_; _·_ to _·n_)
 open import Cubical.Data.Vec renaming ( [] to <> ; _∷_ to _::_)
+open import Cubical.Data.Vec.OperationsNat
 
 open import Cubical.Algebra.Ring
 open import Cubical.Algebra.CommRing
