@@ -6,8 +6,8 @@ open import Cubical.Foundations.Function
 open import Cubical.Foundations.Transport
 open import Cubical.Data.List
 open import Cubical.Data.FinData
-open import Cubical.Data.Nat
 open import Cubical.Data.Empty as ⊥
+open import Cubical.Data.Nat
 
 variable
   ℓ : Level
