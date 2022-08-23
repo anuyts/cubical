@@ -44,3 +44,13 @@ lookup-tabulate : ∀ n → (^a : Fin n → A)
   → PathP (λ i → (Fin (length-tabulate n ^a i) → A)) (lookup (tabulate n ^a)) ^a
 lookup-tabulate (suc n) ^a i zero = ^a zero
 lookup-tabulate (suc n) ^a i (suc p) = lookup-tabulate n (^a ∘ suc) i p
+
+lookup-map : ∀ (f : A → B) (xs : List A)
+  → (p0 : Fin (length (map f xs)))
+  → (p1 : Fin (length xs))
+  → (p : PathP (λ i → Fin (length-map f xs i)) p0 p1)
+  → lookup (map f xs) p0 ≡ f (lookup xs p1)
+lookup-map f (x ∷ xs) zero zero p = refl
+lookup-map f (x ∷ xs) zero (suc p1) p = ⊥.rec (znotsP p)
+lookup-map f (x ∷ xs) (suc p0) zero p = ⊥.rec (snotzP p)
+lookup-map f (x ∷ xs) (suc p0) (suc p1) p = lookup-map f xs p0 p1 (injSucFinP p)
