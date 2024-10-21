@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --experimental-lossy-unification #-}
+{-# OPTIONS --safe --lossy-unification #-}
 module Cubical.Homotopy.Group.Base where
 
 open import Cubical.Homotopy.Loopspace
@@ -14,6 +14,7 @@ open import Cubical.Foundations.Equiv
 open import Cubical.Foundations.Univalence
 open import Cubical.Foundations.Function
 open import Cubical.Foundations.Transport
+open import Cubical.Foundations.Structure
 
 open import Cubical.Functions.Morphism
 
@@ -116,12 +117,7 @@ fst (∙Π {A = A} {n = suc zero} (f , p) (g , q)) base = pt A
 fst (∙Π {A = A} {n = suc zero} (f , p) (g , q)) (loop j) =
   ((sym p ∙∙ cong f loop ∙∙ p) ∙ (sym q ∙∙ cong g loop ∙∙ q)) j
 snd (∙Π {A = A} {n = suc zero} (f , p) (g , q)) = refl
-fst (∙Π {A = A} {n = suc (suc n)} (f , p) (g , q)) north = pt A
-fst (∙Π {A = A} {n = suc (suc n)} (f , p) (g , q)) south = pt A
-fst (∙Π {A = A} {n = suc (suc n)} (f , p) (g , q)) (merid a j) =
-   ((sym p ∙∙ cong f (merid a ∙ sym (merid (ptSn (suc n)))) ∙∙ p)
-  ∙ (sym q ∙∙ cong g (merid a ∙ sym (merid (ptSn (suc n)))) ∙∙ q)) j
-snd (∙Π {A = A} {n = suc (suc n)} (f , p) (g , q)) = refl
+∙Π {A = A} {n = suc (suc n)} = ·Susp (S₊∙ (suc n))
 
 -Π : ∀ {ℓ} {A : Pointed ℓ} {n : ℕ}
   → (S₊∙ n →∙ A)
@@ -1081,3 +1077,15 @@ snd (fst (πIso e n)) =
     (setTruncIso
       (equivToIso (_ , isEquivΩ^→ (suc n) (≃∙map e) (snd (fst e)))))
 snd (πIso e n) = snd (πHom n (≃∙map e))
+
+hGroupoidπ₁ : ∀ {ℓ} (A : hGroupoid ℓ) → ⟨ A ⟩ → Group ℓ
+fst (hGroupoidπ₁ A a) = a ≡ a
+1g (snd (hGroupoidπ₁ A a)) = refl
+GroupStr._·_ (snd (hGroupoidπ₁ A a)) = _∙_
+inv (snd (hGroupoidπ₁ A a)) = sym
+is-set (isSemigroup (isMonoid (isGroup (snd (hGroupoidπ₁ A a))))) = snd A a a
+·Assoc (isSemigroup (isMonoid (isGroup (snd (hGroupoidπ₁ A a))))) = ∙assoc
+·IdR (isMonoid (isGroup (snd (hGroupoidπ₁ A a)))) = sym ∘ rUnit
+·IdL (isMonoid (isGroup (snd (hGroupoidπ₁ A a)))) = sym ∘ lUnit
+·InvR (isGroup (snd (hGroupoidπ₁ A a))) = rCancel
+·InvL (isGroup (snd (hGroupoidπ₁ A a))) = lCancel

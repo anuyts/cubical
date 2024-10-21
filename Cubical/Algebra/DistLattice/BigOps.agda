@@ -1,5 +1,5 @@
--- define ⋁ and ⋀ as the bigOps of a Ring when interpreted
--- as an additive/multiplicative monoid
+-- define ⋁ and ⋀ as the bigOps of a DistLattice when interpreted
+-- as a join/meet semilattice
 
 {-# OPTIONS --safe #-}
 module Cubical.Algebra.DistLattice.BigOps where
@@ -29,12 +29,12 @@ open import Cubical.Algebra.CommMonoid
 open import Cubical.Algebra.Semilattice
 open import Cubical.Algebra.Lattice
 open import Cubical.Algebra.DistLattice
-open import Cubical.Relation.Binary.Poset
+open import Cubical.Relation.Binary.Order.Poset
 
 
 private
   variable
-    ℓ : Level
+    ℓ ℓ' : Level
 
 module KroneckerDelta (L' : DistLattice ℓ) where
  private
@@ -61,6 +61,10 @@ module Join (L' : DistLattice ℓ) where
 
  ⋁Split : ∀ {n} → (V W : FinVec L n) → ⋁ (λ i → V i ∨l W i) ≡ ⋁ V ∨l ⋁ W
  ⋁Split = bigOpSplit ∨lComm
+
+ ⋁Split++ : ∀ {n m : ℕ} (V : FinVec L n) (W : FinVec L m)
+           → ⋁ (V ++Fin W) ≡ ⋁ V ∨l ⋁ W
+ ⋁Split++ = bigOpSplit++
 
  ⋁Meetrdist : ∀ {n} → (x : L) → (V : FinVec L n)
                 → x ∧l ⋁ V ≡ ⋁ λ i → x ∧l V i
@@ -98,28 +102,19 @@ module Join (L' : DistLattice ℓ) where
 
  -- inequalities of big joins
  open JoinSemilattice (Lattice→JoinSemilattice (DistLattice→Lattice L'))
- open PosetReasoning IndPoset
- open PosetStr (IndPoset .snd) hiding (_≤_)
+ ind≤⋁ = ind≤bigOp
+ ⋁IsMax = bigOpIsMax
+ ≤-⋁Ext = ≤-bigOpExt
 
- ind≤⋁ : {n : ℕ} (U : FinVec L n) (i : Fin n) → U i ≤ ⋁ U
- ind≤⋁ {n = suc n} U zero = ∨≤RCancel _ _
- ind≤⋁ {n = suc n} U (suc i) = is-trans _ (⋁ (U ∘ suc)) _ (ind≤⋁ (U ∘ suc) i) (∨≤LCancel _ _)
 
- ⋁IsMax : {n : ℕ} (U : FinVec L n) (x : L) → (∀ i → U i ≤ x) → ⋁ U ≤ x
- ⋁IsMax {n = zero} _ _ _ = ∨lLid _
- ⋁IsMax {n = suc n} U x U≤x =
-   ⋁ U                   ≤⟨ is-refl _ ⟩
-   U zero ∨l ⋁ (U ∘ suc) ≤⟨ ≤-∨LPres _ _ _ (⋁IsMax _ _ (U≤x ∘ suc)) ⟩
-   U zero ∨l x            ≤⟨ ∨lIsMax _ _ _ (U≤x zero) (is-refl x) ⟩
-   x ◾
+module JoinMap {L : DistLattice ℓ} {L' : DistLattice ℓ'} (φ : DistLatticeHom L L') where
+  private module L = Join L
+  private module L' = Join L'
+  open BigOpMap (LatticeHom→JoinSemilatticeHom φ)
 
- ≤-⋁Ext : {n : ℕ} (U W : FinVec L n) → (∀ i → U i ≤ W i) → ⋁ U ≤ ⋁ W
- ≤-⋁Ext {n = zero} U W U≤W = is-refl 0l
- ≤-⋁Ext {n = suc n} U W U≤W =
-   ⋁ U                   ≤⟨ is-refl _ ⟩
-   U zero ∨l ⋁ (U ∘ suc) ≤⟨ ≤-∨Pres _ _ _ _ (U≤W zero) (≤-⋁Ext _ _ (U≤W ∘ suc)) ⟩
-   W zero ∨l ⋁ (W ∘ suc) ≤⟨ is-refl _ ⟩
-   ⋁ W ◾
+  pres⋁ : {n : ℕ} (U : FinVec ⟨ L ⟩ n) → φ .fst (L.⋁ U) ≡ L'.⋁ (φ .fst ∘ U)
+  pres⋁ = presBigOp
+
 
 module Meet (L' : DistLattice ℓ) where
  private
@@ -159,3 +154,12 @@ module Meet (L' : DistLattice ℓ) where
 
  ⋀Join1r : ∀ {n} → (V : FinVec L n) → ⋀ (λ i → 1l ∨l V i) ≡ 1l
  ⋀Join1r V = sym (⋀Joinrdist 1l V) ∙ 1lLeftAnnihilates∨l _
+
+
+module MeetMap {L : DistLattice ℓ} {L' : DistLattice ℓ'} (φ : DistLatticeHom L L') where
+  private module L = Meet L
+  private module L' = Meet L'
+  open BigOpMap (LatticeHom→MeetSemilatticeHom φ)
+
+  pres⋀ : {n : ℕ} (U : FinVec ⟨ L ⟩ n) → φ .fst (L.⋀ U) ≡ L'.⋀ (φ .fst ∘ U)
+  pres⋀ = presBigOp

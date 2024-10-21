@@ -71,11 +71,14 @@ module _ {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} where
   open NatTrans
   open NatIso
 
-  infix 10 NatTrans
-  syntax NatTrans F G = F ⇒ G
+  infix 10 _⇒_
+  _⇒_ : Functor C D → Functor C D → Type (ℓ-max (ℓ-max ℓC ℓC') ℓD')
+  _⇒_ = NatTrans
 
-  infix 9 NatIso
-  syntax NatIso F G = F ≅ᶜ G -- c superscript to indicate that this is in the context of categories
+  infix 9 _≅ᶜ_
+  -- c superscript to indicate that this is in the context of categories
+  _≅ᶜ_ : Functor C D → Functor C D → Type (ℓ-max (ℓ-max ℓC ℓC') (ℓ-max ℓD ℓD'))
+  _≅ᶜ_ = NatIso
 
   -- component of a natural transformation
   infix 30 _⟦_⟧
@@ -92,7 +95,8 @@ module _ {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} where
       (D .id) ⋆ᴰ (F .F-hom f)
     ∎
 
-  syntax idTrans F = 1[ F ]
+  1[_] : (F : Functor C D) → NatTrans F F
+  1[_] = idTrans
 
   idNatIso : (F : Functor C D) → NatIso F F
   idNatIso F .trans = idTrans F
@@ -131,8 +135,9 @@ module _ {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} where
   compTrans : {F G H : Functor C D} (β : NatTrans G H) (α : NatTrans F G) → NatTrans F H
   compTrans β α = seqTrans α β
 
-  infixl 8 seqTrans
-  syntax seqTrans α β = α ●ᵛ β
+  infixl 8 _●ᵛ_
+  _●ᵛ_ : {F G H : Functor C D} → NatTrans F G → NatTrans G H → NatTrans F H
+  _●ᵛ_ = seqTrans
 
 
   -- vertically sequence natural transformations whose
@@ -237,8 +242,17 @@ module _ {B : Category ℓB ℓB'} {C : Category ℓC ℓC'} {D : Category ℓD 
   _∘ʳ_ : ∀ (K : Functor C D) → {G H : Functor B C} (β : NatTrans G H)
        → NatTrans (K ∘F G) (K ∘F H)
   (_∘ʳ_ K {G} {H} β) .N-ob x = K ⟪ β ⟦ x ⟧ ⟫
-  (_∘ʳ_ K {G} {H} β) .N-hom f = preserveCommF {C = C} {D = D} {K} (β .N-hom f)
+  (_∘ʳ_ K {G} {H} β) .N-hom f = preserveCommF K (β .N-hom f)
 
   whiskerTrans : {F F' : Functor B C} {G G' : Functor C D} (β : NatTrans G G') (α : NatTrans F F')
     → NatTrans (G ∘F F) (G' ∘F F')
   whiskerTrans {F}{F'}{G}{G'} β α = compTrans (β ∘ˡ F') (G ∘ʳ α)
+
+module _ {B : Category ℓB ℓB'} {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} where
+  open NatIso
+  -- whiskering
+  -- αF
+  _∘ˡⁱ_ : ∀ {G H : Functor C D} (α : NatIso G H) → (F : Functor B C)
+        → NatIso (G ∘F F) (H ∘F F)
+  _∘ˡⁱ_ {G} {H} α F .trans = α .trans ∘ˡ F
+  _∘ˡⁱ_ {G} {H} α F .nIso x = α .nIso (F ⟅ x ⟆)

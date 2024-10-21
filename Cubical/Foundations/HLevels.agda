@@ -25,6 +25,8 @@ open import Cubical.Foundations.Univalence using (ua ; univalenceIso)
 open import Cubical.Data.Sigma
 open import Cubical.Data.Nat   using (ℕ; zero; suc; _+_; +-zero; +-comm)
 
+open Iso
+
 HLevel : Type₀
 HLevel = ℕ
 
@@ -95,6 +97,18 @@ isOfHLevelPlus' : (m : HLevel) → isOfHLevel m A → isOfHLevel (m + n) A
 isOfHLevelPlus' {n = n} 0 = isContr→isOfHLevel n
 isOfHLevelPlus' {n = n} 1 = isProp→isOfHLevelSuc n
 isOfHLevelPlus' {n = n} (suc (suc m)) hA a₀ a₁ = isOfHLevelPlus' (suc m) (hA a₀ a₁)
+
+-- When proving a type has h-level n+1, we can assume it is inhabited.
+-- To prove a type is a proposition, it suffices to prove it is contractible if inhabited
+
+isOfHLevelSucIfInhabited→isOfHLevelSuc : ∀ n
+  → (A → isOfHLevel (suc n) A) → isOfHLevel (suc n) A
+isOfHLevelSucIfInhabited→isOfHLevelSuc zero hA a = hA a a
+isOfHLevelSucIfInhabited→isOfHLevelSuc (suc n) hA a = hA a a
+
+isContrIfInhabited→isProp : (A → isContr A) → isProp A
+isContrIfInhabited→isProp hA =
+  isOfHLevelSucIfInhabited→isOfHLevelSuc 0 (isContr→isProp ∘ hA)
 
 -- hlevel of path types
 
@@ -448,6 +462,14 @@ isPropImplicitΠ h f g i {x} = h x (f {x}) (g {x}) i
 isPropImplicitΠ2 : (h : (x : A) (y : B x) → isProp (C x y)) → isProp ({x : A} {y : B x} → C x y)
 isPropImplicitΠ2 h = isPropImplicitΠ (λ x → isPropImplicitΠ (λ y → h x y))
 
+isPropImplicitΠ3 : (h : (x : A) (y : B x) (z : C x y) → isProp (D x y z)) →
+    isProp ({x : A} {y : B x} {z : C x y} → D x y z)
+isPropImplicitΠ3 h = isPropImplicitΠ (λ x → isPropImplicitΠ2 (λ y → h x y))
+
+isPropImplicitΠ4 : (h : (x : A) (y : B x) (z : C x y) (w : D x y z) → isProp (E x y z w)) →
+    isProp ({x : A} {y : B x} {z : C x y} {w : D x y z} → E x y z w)
+isPropImplicitΠ4 h = isPropImplicitΠ (λ x → isPropImplicitΠ3 (λ y → h x y))
+
 isProp→ : {A : Type ℓ} {B : Type ℓ'} → isProp B → isProp (A → B)
 isProp→ pB = isPropΠ λ _ → pB
 
@@ -456,6 +478,13 @@ isSetΠ = isOfHLevelΠ 2
 
 isSetImplicitΠ : (h : (x : A) → isSet (B x)) → isSet ({x : A} → B x)
 isSetImplicitΠ h f g F G i j {x} = h x (f {x}) (g {x}) (λ i → F i {x}) (λ i → G i {x}) i j
+
+isSetImplicitΠ2 : (h : (x : A) → (y : B x) → isSet (C x y)) → isSet ({x : A} → {y : B x} → C x y)
+isSetImplicitΠ2 h = isSetImplicitΠ (λ x → isSetImplicitΠ (λ y → h x y))
+
+isSetImplicitΠ3 : (h : (x : A) → (y : B x) → (z : C x y) → isSet (D x y z)) →
+    isSet ({x : A} → {y : B x} → {z : C x y} → D x y z)
+isSetImplicitΠ3 h = isSetImplicitΠ (λ x → isSetImplicitΠ2 (λ y → λ z → h x y z))
 
 isSet→ : isSet A' → isSet (A → A')
 isSet→ isSet-A' = isOfHLevelΠ 2 (λ _ → isSet-A')
@@ -576,6 +605,9 @@ isGroupoidHSet = isOfHLevelTypeOfHLevel 2
 isOfHLevelLift : ∀ {ℓ ℓ'} (n : HLevel) {A : Type ℓ} → isOfHLevel n A → isOfHLevel n (Lift {j = ℓ'} A)
 isOfHLevelLift n = isOfHLevelRetract n lower lift λ _ → refl
 
+isOfHLevelLower : ∀ {ℓ ℓ'} (n : HLevel) {A : Type ℓ} → isOfHLevel n (Lift {j = ℓ'} A) → isOfHLevel n A
+isOfHLevelLower n = isOfHLevelRetract n lift lower λ _ → refl
+
 ----------------------------
 
 -- More consequences of isProp and isContr
@@ -603,7 +635,7 @@ isContrPartial→isContr {A = A} extend law
 
 isOfHLevelDep : HLevel → {A : Type ℓ} (B : A → Type ℓ') → Type (ℓ-max ℓ ℓ')
 isOfHLevelDep 0 {A = A} B = {a : A} → Σ[ b ∈ B a ] ({a' : A} (b' : B a') (p : a ≡ a') → PathP (λ i → B (p i)) b b')
-isOfHLevelDep 1 {A = A} B = {a0 a1 : A} (b0 : B a0) (b1 : B a1) (p : a0 ≡ a1)  → PathP (λ i → B (p i)) b0 b1
+isOfHLevelDep 1 {A = A} B = {a0 a1 : A} (b0 : B a0) (b1 : B a1) (p : a0 ≡ a1) → PathP (λ i → B (p i)) b0 b1
 isOfHLevelDep (suc (suc  n)) {A = A} B = {a0 a1 : A} (b0 : B a0) (b1 : B a1) → isOfHLevelDep (suc n) {A = a0 ≡ a1} (λ p → PathP (λ i → B (p i)) b0 b1)
 
 isContrDep : {A : Type ℓ} (B : A → Type ℓ') → Type (ℓ-max ℓ ℓ')
@@ -620,6 +652,12 @@ isContrDep∘ f cB {a} = λ where
 
 isPropDep∘ : {A' : Type ℓ} (f : A' → A) → isPropDep B → isPropDep (B ∘ f)
 isPropDep∘ f pB b0 b1 = pB b0 b1 ∘ cong f
+
+isOfHLevelDep→isOfHLevel : (n : HLevel)
+  → {A : Type ℓ} {B : A → Type ℓ'} → isOfHLevelDep n {A = A} B → (a : A) → isOfHLevel n (B a)
+isOfHLevelDep→isOfHLevel 0 h a = h .fst , λ b → h .snd b refl
+isOfHLevelDep→isOfHLevel 1 h a x y = h x y refl
+isOfHLevelDep→isOfHLevel (suc (suc n)) h a x y = isOfHLevelDep→isOfHLevel (suc n) (h x y) refl
 
 isOfHLevel→isOfHLevelDep : (n : HLevel)
   → {A : Type ℓ} {B : A → Type ℓ'} (h : (a : A) → isOfHLevel n (B a)) → isOfHLevelDep n {A = A} B
@@ -789,3 +827,39 @@ isSet→Iso-Iso-≡ isSet-A isSet-A' = ww
 
 hSet-Iso-Iso-≡ : (A : hSet ℓ) → (A' : hSet ℓ) → Iso (Iso (fst A) (fst A')) (A ≡ A')
 hSet-Iso-Iso-≡ A A' = compIso (isSet→Iso-Iso-≡ (snd A) (snd A')) (equivToIso (_ , isEquiv-Σ≡Prop λ _ → isPropIsSet))
+
+module _ (B : (i j k : I) → Type ℓ)
+  {c₀₀₀ : B i0 i0 i0} {c₀₀₁ : B i0 i0 i1} {c₀₁₀ : B i0 i1 i0} {c₀₁₁ : B i0 i1 i1}
+  {c₁₀₀ : B i1 i0 i0} {c₁₀₁ : B i1 i0 i1} {c₁₁₀ : B i1 i1 i0} {c₁₁₁ : B i1 i1 i1}
+  {c₀₀₋ : PathP (λ k → B i0 i0 k) c₀₀₀ c₀₀₁} {c₀₁₋ : PathP (λ k → B i0 i1 k) c₀₁₀ c₀₁₁}
+  {c₀₋₀ : PathP (λ i → B i0 i i0) c₀₀₀ c₀₁₀} {c₀₋₁ : PathP (λ i → B i0 i i1) c₀₀₁ c₀₁₁}
+  {c₁₀₋ : PathP (λ k → B i1 i0 k) c₁₀₀ c₁₀₁} {c₁₁₋ : PathP (λ k → B i1 i1 k) c₁₁₀ c₁₁₁}
+  {c₁₋₀ : PathP (λ i → B i1 i i0) c₁₀₀ c₁₁₀} {c₁₋₁ : PathP (λ i → B i1 i i1) c₁₀₁ c₁₁₁}
+  {c₋₀₀ : PathP (λ i → B i i0 i0) c₀₀₀ c₁₀₀} {c₋₀₁ : PathP (λ i → B i i0 i1) c₀₀₁ c₁₀₁}
+  {c₋₁₀ : PathP (λ i → B i i1 i0) c₀₁₀ c₁₁₀} {c₋₁₁ : PathP (λ i → B i i1 i1) c₀₁₁ c₁₁₁}
+  (c₀₋₋ : SquareP (λ j k → B i0 j k) c₀₀₋ c₀₁₋ c₀₋₀ c₀₋₁)
+  (c₁₋₋ : SquareP (λ j k → B i1 j k) c₁₀₋ c₁₁₋ c₁₋₀ c₁₋₁)
+  (c₋₀₋ : SquareP (λ i k → B i i0 k) c₀₀₋ c₁₀₋ c₋₀₀ c₋₀₁)
+  (c₋₁₋ : SquareP (λ i k → B i i1 k) c₀₁₋ c₁₁₋ c₋₁₀ c₋₁₁)
+  (c₋₋₀ : SquareP (λ i j → B i j i0) c₀₋₀ c₁₋₀ c₋₀₀ c₋₁₀)
+  (c₋₋₁ : SquareP (λ i j → B i j i1) c₀₋₁ c₁₋₁ c₋₀₁ c₋₁₁) where
+
+  CubeP : Type ℓ
+  CubeP = PathP (λ i → SquareP (λ j k → B i j k)
+                      (c₋₀₋ i) (c₋₁₋ i)
+                      (c₋₋₀ i) (c₋₋₁ i))
+                 c₀₋₋ c₁₋₋
+
+  isGroupoid→CubeP : isGroupoid (B i1 i1 i1) → CubeP
+  isGroupoid→CubeP grpd =
+    isOfHLevelPathP' 0 (isOfHLevelPathP' 1 (isOfHLevelPathP' 2 grpd _ _) _ _) _ _ .fst
+
+
+Π-contractDomIso : (c : isContr A) → Iso ((x : A) → B x) (B (c .fst))
+Π-contractDomIso {B = B} c .fun f = f (c .fst)
+Π-contractDomIso {B = B} c .inv b x = subst B (c .snd x) b
+Π-contractDomIso {B = B} c .rightInv b i = transp (λ j → B (isProp→isSet (isContr→isProp c) _ _ (c .snd (c .fst)) refl i j)) i b
+Π-contractDomIso {B = B} c .leftInv f = funExt λ x → fromPathP (cong f (c .snd x))
+
+Π-contractDom : (c : isContr A) → ((x : A) → B x) ≃ B (c .fst)
+Π-contractDom c = isoToEquiv (Π-contractDomIso c)

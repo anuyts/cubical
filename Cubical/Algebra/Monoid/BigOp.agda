@@ -52,9 +52,22 @@ module MonoidBigOp (M' : Monoid ℓ) where
   ≡⟨ ·Assoc _ _ _ ⟩
     V zero · bigOp (V ∘ suc) · (W zero · bigOp (W ∘ suc)) ∎
 
- bigOpSplit++ : (∀ x y → x · y ≡ y · x)
-              → {n m : ℕ} → (V : FinVec M n) → (W : FinVec M m)
+ bigOpSplit++ : {n m : ℕ} → (V : FinVec M n) → (W : FinVec M m)
               → bigOp (V ++Fin W) ≡ bigOp V · bigOp W
 
- bigOpSplit++ comm {n = zero} V W = sym (·IdL _)
- bigOpSplit++ comm {n = suc n} V W = cong (V zero ·_) (bigOpSplit++ comm (V ∘ suc) W) ∙ ·Assoc _ _ _
+ bigOpSplit++ {n = zero} V W = sym (·IdL _)
+ bigOpSplit++ {n = suc n} V W = cong (V zero ·_) (bigOpSplit++ (V ∘ suc) W) ∙ ·Assoc _ _ _
+
+
+module BigOpMap {M : Monoid ℓ} {M' : Monoid ℓ'} (φ : MonoidHom M M') where
+  private module M = MonoidBigOp M
+  private module M' = MonoidBigOp M'
+  open IsMonoidHom (φ .snd)
+  open MonoidStr ⦃...⦄
+  private instance
+    _ = M .snd
+    _ = M' .snd
+
+  presBigOp : {n : ℕ} (U : FinVec ⟨ M ⟩ n) → φ .fst (M.bigOp U) ≡ M'.bigOp (φ .fst ∘ U)
+  presBigOp {n = zero} U = presε
+  presBigOp {n = suc n} U = pres· _ _ ∙ cong (φ .fst (U zero) ·_) (presBigOp (U ∘ suc))

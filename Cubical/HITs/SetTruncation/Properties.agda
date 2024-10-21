@@ -8,8 +8,6 @@ This file contains:
 {-# OPTIONS --safe #-}
 module Cubical.HITs.SetTruncation.Properties where
 
-open import Cubical.HITs.SetTruncation.Base
-
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.GroupoidLaws
 open import Cubical.Foundations.Function
@@ -18,14 +16,19 @@ open import Cubical.Foundations.Equiv
 open import Cubical.Foundations.HLevels
 open import Cubical.Foundations.Univalence
 open import Cubical.Foundations.Pointed.Base
+
 open import Cubical.Data.Sigma
 open import Cubical.HITs.PropositionalTruncation
   renaming (rec to pRec ; elim to pElim) hiding (elim2 ; elim3 ; rec2 ; map)
+open import Cubical.HITs.SetTruncation.Base
 
 private
   variable
-    ℓ ℓ' ℓ'' : Level
-    A B C D : Type ℓ
+    ℓ ℓ' ℓ'' ℓa ℓb ℓc ℓd : Level
+    A : Type ℓa
+    B : Type ℓb
+    C : Type ℓc
+    D : Type ℓd
 
 isSetPathImplicit : {x y : ∥ A ∥₂} → isSet (x ≡ y)
 isSetPathImplicit = isOfHLevelPath 2 squash₂ _ _
@@ -72,12 +75,20 @@ elim2 Cset f (squash₂ x y p q i j) z =
 --                     (λ a → elim (λ _ → Cset _ _) (f a))
 
 -- TODO: generalize
-elim3 : {B : (x y z : ∥ A ∥₂) → Type ℓ}
-        (Bset : ((x y z : ∥ A ∥₂) → isSet (B x y z)))
-        (g : (a b c : A) → B ∣ a ∣₂ ∣ b ∣₂ ∣ c ∣₂)
-        (x y z : ∥ A ∥₂) → B x y z
-elim3 Bset g = elim2 (λ _ _ → isSetΠ (λ _ → Bset _ _ _))
-                     (λ a b → elim (λ _ → Bset _ _ _) (g a b))
+elim3 : {D : ∥ A ∥₂ → ∥ B ∥₂ → ∥ C ∥₂ → Type ℓ}
+        (Dset : ((x : ∥ A ∥₂) (y : ∥ B ∥₂) (z : ∥ C ∥₂) → isSet (D x y z)))
+        (g : (a : A) (b : B) (c : C) → D ∣ a ∣₂ ∣ b ∣₂ ∣ c ∣₂)
+        (x : ∥ A ∥₂) (y : ∥ B ∥₂) (z : ∥ C ∥₂) → D x y z
+elim3 Dset g = elim2 (λ _ _ → isSetΠ (λ _ → Dset _ _ _))
+                     (λ a b → elim (λ _ → Dset _ _ _) (g a b))
+
+elim4 : {E : ∥ A ∥₂ → ∥ B ∥₂ → ∥ C ∥₂ → ∥ D ∥₂ → Type ℓ}
+        (Eset : ((w : ∥ A ∥₂) (x : ∥ B ∥₂) (y : ∥ C ∥₂) (z : ∥ D ∥₂)
+              → isSet (E w x y z)))
+        (g : (a : A) (b : B) (c : C) (d : D) → E ∣ a ∣₂ ∣ b ∣₂ ∣ c ∣₂ ∣ d ∣₂)
+        (w : ∥ A ∥₂) (x : ∥ B ∥₂) (y : ∥ C ∥₂) (z : ∥ D ∥₂) → E w x y z
+elim4 Eset g = elim3 (λ _ _ _ → isSetΠ λ _ → Eset _ _ _ _)
+                     λ a b c → elim (λ _ → Eset _ _ _ _) (g a b c)
 
 
 -- the recursor for maps into groupoids following the "HIT proof" in:
@@ -326,3 +337,8 @@ Iso.fun (PathIdTrunc₀Iso {b = b}) p =
 Iso.inv PathIdTrunc₀Iso = pRec (squash₂ _ _) (cong ∣_∣₂)
 Iso.rightInv PathIdTrunc₀Iso _ = squash₁ _ _
 Iso.leftInv PathIdTrunc₀Iso _ = squash₂ _ _ _ _
+
+mapFunctorial : {A B C : Type ℓ} (f : A → B) (g : B → C)
+  → map g ∘ map f ≡ map (g ∘ f)
+mapFunctorial f g =
+  funExt (elim (λ x → isSetPathImplicit) λ a → refl)

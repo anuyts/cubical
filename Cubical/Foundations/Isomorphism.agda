@@ -10,7 +10,7 @@ Theory about isomorphisms
 {-# OPTIONS --safe #-}
 module Cubical.Foundations.Isomorphism where
 
-open import Cubical.Core.Everything
+open import Cubical.Core.Glue
 
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.GroupoidLaws
@@ -103,6 +103,15 @@ module _ (i : Iso A B) where
 isoToEquiv : Iso A B → A ≃ B
 isoToEquiv i .fst = i .Iso.fun
 isoToEquiv i .snd = isoToIsEquiv i
+
+isoToIsIso : {f : A → B} → isIso f → Iso A B
+isoToIsIso {f = f} fIsIso .Iso.fun = f
+isoToIsIso fIsIso .Iso.inv = fIsIso .fst
+isoToIsIso fIsIso .Iso.rightInv = fIsIso .snd .fst
+isoToIsIso fIsIso .Iso.leftInv = fIsIso .snd .snd
+
+isIsoToIsEquiv : {f : A → B} → isIso f → isEquiv f
+isIsoToIsEquiv fIsIso = isoToIsEquiv (isoToIsIso fIsIso)
 
 isoToPath : Iso A B → A ≡ B
 isoToPath {A = A} {B = B} f i =
@@ -201,6 +210,11 @@ codomainIso : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ'
            → Iso (A → B) (A → C)
 codomainIso z = codomainIsoDep λ _ → z
 
+endoIso : Iso A B → Iso (A → A) (B → B)
+endoIso is = compIso (domIso is) (codomainIso is)
+
+binaryOpIso : Iso A B → Iso (A → A → A) (B → B → B)
+binaryOpIso is = compIso (domIso is) (codomainIso (endoIso is))
 
 Iso≡Set : isSet A → isSet B → (f g : Iso A B)
         → ((x : A) → f .fun x ≡ g .fun x)
@@ -212,3 +226,9 @@ rightInv (Iso≡Set hA hB f g hfun hinv i) x j =
   isSet→isSet' hB (rightInv f x) (rightInv g x) (λ i → hfun (hinv x i) i) refl i j
 leftInv (Iso≡Set hA hB f g hfun hinv i) x j =
   isSet→isSet' hA (leftInv f x) (leftInv g x) (λ i → hinv (hfun x i) i) refl i j
+
+transportIsoToPath : (f : Iso A B) (x : A) → transport (isoToPath f) x ≡ f .fun x
+transportIsoToPath f x = transportRefl _
+
+transportIsoToPath⁻ : (f : Iso A B) (x : B) → transport (sym (isoToPath f)) x ≡ f .inv x
+transportIsoToPath⁻ f x = cong (f .inv) (transportRefl _)

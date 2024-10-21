@@ -127,6 +127,9 @@ discreteℕ (suc m) (suc n) with discreteℕ m n
 ... | yes p = yes (cong suc p)
 ... | no p = no (λ x → p (injSuc x))
 
+separatedℕ : Separated ℕ
+separatedℕ = Discrete→Separated discreteℕ
+
 isSetℕ : isSet ℕ
 isSetℕ = Discrete→isSet discreteℕ
 
@@ -169,6 +172,12 @@ m+n≡n→m≡0 {n = suc n} p = m+n≡n→m≡0 (injSuc ((sym (+-suc _ n)) ∙ p
 m+n≡0→m≡0×n≡0 : m + n ≡ 0 → (m ≡ 0) × (n ≡ 0)
 m+n≡0→m≡0×n≡0 {zero} = refl ,_
 m+n≡0→m≡0×n≡0 {suc m} p = ⊥.rec (snotz p)
+
+m+n≡1→m≡0×n≡1⊎m≡1n≡0 : m + n ≡ 1 → ((m ≡ 0) × (n ≡ 1)) ⊎ ((m ≡ 1) × (n ≡ 0))
+m+n≡1→m≡0×n≡1⊎m≡1n≡0 {zero} x = inl (refl , x)
+m+n≡1→m≡0×n≡1⊎m≡1n≡0 {suc m} {n} x =
+ let (m≡0 , n≡0) = m+n≡0→m≡0×n≡0 (injSuc x)
+ in inr (cong suc m≡0 , n≡0 )
 
 -- Arithmetic facts about ·
 
@@ -327,3 +336,13 @@ module PlusBis where
   +'-suc zero (suc m) = refl
   +'-suc (suc n) zero = refl
   +'-suc (suc n) (suc m) = refl
+
+-- Neat transport lemma for ℕ
+compSubstℕ : ∀ {ℓ} {A : ℕ → Type ℓ} {n m l : ℕ}
+   (p : n ≡ m) (q : m ≡ l) (r : n ≡ l)
+   → {x : _}
+   → subst A q (subst A p x)
+   ≡ subst A r x
+compSubstℕ {A = A} p q r {x = x} =
+  sym (substComposite A p q x)
+  ∙ λ i → subst A (isSetℕ _ _ (p ∙ q) r i) x

@@ -9,6 +9,7 @@ open import Cubical.Foundations.Path
 open import Cubical.Foundations.Pointed
 open import Cubical.Foundations.Pointed.Homogeneous
 open import Cubical.Foundations.GroupoidLaws
+open import Cubical.Foundations.Function
 
 open import Cubical.Data.Bool
 open import Cubical.Data.Sigma
@@ -20,8 +21,25 @@ open import Cubical.Homotopy.Loopspace
 private
   variable
     ℓ : Level
+    A B C : Type ℓ
 
 open Iso
+
+suspFunComp : (f : B → C) (g : A → B)
+               → suspFun (f ∘ g) ≡ (suspFun f) ∘ (suspFun g)
+suspFunComp f g i north = north
+suspFunComp f g i south = south
+suspFunComp f g i (merid a i₁) = merid (f (g a)) i₁
+
+suspFunConst : (b : B) → suspFun (λ (_ : A) → b) ≡ λ _ → north
+suspFunConst b i north = north
+suspFunConst b i south = merid b (~ i)
+suspFunConst b i (merid a j) = merid b (~ i ∧ j)
+
+suspFunIdFun : suspFun (λ (a : A) → a) ≡ λ x → x
+suspFunIdFun i north = north
+suspFunIdFun i south = south
+suspFunIdFun i (merid a j) = merid a j
 
 Susp-iso-joinBool : ∀ {ℓ} {A : Type ℓ} → Iso (Susp A) (join A Bool)
 fun Susp-iso-joinBool north = inr true
@@ -55,7 +73,7 @@ Susp≃joinBool = isoToEquiv Susp-iso-joinBool
 Susp≡joinBool : ∀ {ℓ} {A : Type ℓ} → Susp A ≡ join A Bool
 Susp≡joinBool = isoToPath Susp-iso-joinBool
 
-congSuspIso : ∀ {ℓ} {A B : Type ℓ} → Iso A B → Iso (Susp A) (Susp B)
+congSuspIso : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → Iso A B → Iso (Susp A) (Susp B)
 fun (congSuspIso is) = suspFun (fun is)
 inv (congSuspIso is) = suspFun (inv is)
 rightInv (congSuspIso is) north = refl
@@ -360,3 +378,12 @@ toSusp-invSusp A (merid a i) j =
           λ r → flipSquare (sym (rUnit refl)
                 ◁ (flipSquare (sym (sym≡cong-sym r))
                 ▷ rUnit refl)))
+
+-- co-H-space structure
+·Susp : ∀ {ℓ'} (A : Pointed ℓ) {B : Pointed ℓ'}
+        (f g : Susp∙ (typ A) →∙ B) → Susp∙ (typ A) →∙ B
+fst (·Susp A {B = B} f g) north = pt B
+fst (·Susp A {B = B} f g) south = pt B
+fst (·Susp A {B = B} f g) (merid a i) =
+  (Ω→ f .fst (toSusp A a) ∙ Ω→ g .fst (toSusp A a)) i
+snd (·Susp A f g) = refl

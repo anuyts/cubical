@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --experimental-lossy-unification #-}
+{-# OPTIONS --safe --lossy-unification #-}
 {-
 This file contains a proof that the generator of Π₃S² has
 hopf invariant ±1.
@@ -44,10 +44,11 @@ open import Cubical.Algebra.Group.MorphismProperties
 open import Cubical.Algebra.Group.Instances.Int
 open import Cubical.Algebra.Group.GroupPath
 
-open import Cubical.HITs.Pushout
+open import Cubical.HITs.Pushout as Pushout
 open import Cubical.HITs.Join
 open import Cubical.HITs.S1 renaming (_·_ to _*_)
 open import Cubical.HITs.Sn
+open import Cubical.HITs.Sn.Multiplication
 open import Cubical.HITs.Susp
 open import Cubical.HITs.Truncation
   renaming (rec to trRec ; elim to trElim)
@@ -93,7 +94,7 @@ conCP² x y = sRec2 squash₂ (λ p q → ∣ p ∙ sym q ∣₂) (conCP²' x) (
         → A (inl base)
         → ((a : hopfS¹.TotalSpaceHopfPush) → A a)
     indLem {A = A} p b =
-      PushoutToProp p
+      Pushout.elimProp _ p
         (sphereElim 0 (λ _ → p _) b)
         (sphereElim 0 (λ _ → p _) (subst A (push (base , base)) b))
 

@@ -19,14 +19,14 @@ open import Cubical.Foundations.Function
 open import Cubical.Foundations.Pointed hiding (pt)
 
 open import Cubical.Data.Nat
-open import Cubical.Tactics.NatSolver.Reflection
+open import Cubical.Tactics.NatSolver
 open import Cubical.Data.Unit
 open import Cubical.Data.Sigma
 
 open import Cubical.HITs.Wedge
 open import Cubical.HITs.Pushout
 open import Cubical.HITs.Pushout.PushoutProduct
-open import Cubical.HITs.SequentialColimit
+import Cubical.HITs.SequentialColimit as SColim
 open import Cubical.HITs.James.Inductive.Base
   renaming (𝕁ames to 𝕁amesContruction ; 𝕁ames∞ to 𝕁ames∞Contruction)
 
@@ -247,7 +247,7 @@ module _
                   (isEquiv→isConnected _ (𝕁amesPush≃ k .snd) _)))))
 
     nat-path : (n m k : ℕ) → (1 + (k + m)) · n ≡ k · n + (1 + m) · n
-    nat-path = solve
+    nat-path _ _ _ = solveℕ!
 
   -- Connectivity results
 
@@ -264,8 +264,8 @@ module _
 
   private
     inl∞ : (n : ℕ) → 𝕁ames n → 𝕁ames∞
-    inl∞ _ = inl
+    inl∞ _ = SColim.incl
 
   isConnectedInl : (n : ℕ) → isConnected (1 + n) X
     → (m : ℕ) → isConnectedFun ((1 + m) · n) (inl∞ m)
-  isConnectedInl n conn m = isConnectedInl∞ _ _ _ (isConnectedIncl>n _ conn _)
+  isConnectedInl n conn m = SColim.isConnectedIncl∞ _ _ _ (isConnectedIncl>n _ conn _)

@@ -40,6 +40,9 @@ import Cubical.Papers.Everything
 -- Properties and proofs about relations
 import Cubical.Relation.Everything
 
+-- Wild category theory
+import Cubical.WildCat.Everything
+
 -- Category theory
 import Cubical.Categories.Everything
 
@@ -65,6 +68,9 @@ import Cubical.ZCohomology.Everything
 -- Algebra library (in development)
 import Cubical.Algebra.Everything
 
+-- Algebraic geometry
+import Cubical.AlgebraicGeometry.Everything
+
 -- Various talks
 import Cubical.Talks.Everything
 
@@ -79,3 +85,6 @@ import Cubical.Axiom.Everything
 
 -- Automatic proving, solvers
 import Cubical.Tactics.Everything
+
+-- CW complexes, cellular (co)homology
+import Cubical.CW.Everything

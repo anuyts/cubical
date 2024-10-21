@@ -2,26 +2,26 @@
 
 module Cubical.Homotopy.Loopspace where
 
-open import Cubical.Core.Everything
-
-open import Cubical.Data.Nat
-
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Pointed
 open import Cubical.Foundations.Pointed.Homogeneous
 open import Cubical.Foundations.HLevels
 open import Cubical.Foundations.GroupoidLaws
-open import Cubical.HITs.SetTruncation
-open import Cubical.HITs.Truncation hiding (elim2) renaming (rec to trRec)
 open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.Transport
+open import Cubical.Foundations.Equiv
 open import Cubical.Foundations.Equiv.HalfAdjoint
 open import Cubical.Foundations.Function
 open import Cubical.Foundations.Path
-open import Cubical.Foundations.Equiv.HalfAdjoint
-open import Cubical.Foundations.Equiv
+
 open import Cubical.Functions.Morphism
+
+open import Cubical.Data.Nat
 open import Cubical.Data.Sigma
+
+open import Cubical.HITs.SetTruncation
+open import Cubical.HITs.Truncation hiding (elim2) renaming (rec to trRec)
+
 open Iso
 
 {- loop space of a pointed type -}
@@ -208,6 +208,19 @@ fst (inv (ΩfunExtIso A B) (f , p) i) x = f x i
 snd (inv (ΩfunExtIso A B) (f , p) i) j = p j i
 rightInv (ΩfunExtIso A B) _ = refl
 leftInv (ΩfunExtIso A B) _ = refl
+
+relax→∙Ω-Iso : ∀ {ℓ ℓ'} {A : Pointed ℓ} {B : Pointed ℓ'}
+  → Iso (Σ[ b ∈ fst B ] (fst A → b ≡ pt B))
+         (A →∙ (Ω B))
+Iso.fun (relax→∙Ω-Iso {A = A}) (b , p) = (λ a → sym (p (pt A)) ∙ p a) , lCancel (p (snd A))
+Iso.inv (relax→∙Ω-Iso {B = B}) a = (pt B) , (fst a)
+Iso.rightInv (relax→∙Ω-Iso) a =
+  →∙Homogeneous≡ (isHomogeneousPath _ _)
+    (funExt λ x → cong (_∙ fst a x) (cong sym (snd a)) ∙ sym (lUnit (fst a x)))
+Iso.leftInv (relax→∙Ω-Iso {A = A}) (b , p) =
+  ΣPathP (sym (p (pt A))
+       , λ i a j → compPath-filler' (sym (p (pt A))) (p a) (~ i) j)
+
 
 {- Commutativity of loop spaces -}
 isComm∙ : ∀ {ℓ} (A : Pointed ℓ) → Type ℓ

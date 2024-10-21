@@ -22,7 +22,7 @@ open import Cubical.Foundations.SIP
 open import Cubical.Structures.Pointed
 open import Cubical.Structures.TypeEqvTo
 
-open import Cubical.Data.Bool
+open import Cubical.Data.Bool hiding (elim ; Bool*)
 open import Cubical.Data.Nat hiding (elim)
 open import Cubical.Data.NatMinusOne
 open import Cubical.Data.Sigma
@@ -40,6 +40,7 @@ open import Cubical.HITs.Pushout.Flattening
 private
   variable
     ℓ ℓ' ℓ'' : Level
+    A : Type ℓ
 
 -- PR² as a HIT
 data RP² : Type₀ where
@@ -318,3 +319,46 @@ RP1≡S1 = Pushout {A = Total (cov⁻¹ 0)} {B = RP 0} (pr (cov⁻¹ 0)) (λ _ �
                           (λ x → ua-gluePt RP0≃Unit i (pr (cov⁻¹ 0) x))
                           (λ _ → tt)
         ii = λ j → Pushout {A = ua (TotalCov≃Sn 0) j} (λ _ → tt) (λ _ → tt)
+
+
+-- RP²-lemmas
+RP²Fun : (a : A) (p : a ≡ a) (p∼p⁻¹ : p ≡ sym p)
+  → RP² → A
+RP²Fun a p p∼p⁻¹ point = a
+RP²Fun a p p∼p⁻¹ (line i) = p i
+RP²Fun a p p∼p⁻¹ (square i i₁) = p∼p⁻¹ i i₁
+
+elimSetRP² : {A : RP² → Type ℓ} → ((x : RP²) → isSet (A x))
+  → (point* : A point)
+  → PathP (λ i → A (line i)) point* point*
+  → (x : RP²) → A x
+elimSetRP² set point* p point = point*
+elimSetRP² set point* p (line i) = p i
+elimSetRP² {A = A} set point* p (square i j) =
+  isOfHLevel→isOfHLevelDep 2 {B = A} set point* point* p (symP p) square i j
+
+elimPropRP² : {A : RP² → Type ℓ} → ((x : RP²) → isProp (A x))
+  → (point* : A point)
+  → (x : RP²) → A x
+elimPropRP² pr point* =
+  elimSetRP² (λ x → isProp→isSet (pr _))
+    point* (isProp→PathP (λ _ → pr _) _ _)
+
+characRP²Fun : ∀ {ℓ} {A : Type ℓ} (f : RP² → A)
+  → RP²Fun (f point) (cong f line) (λ i j → f (square i j)) ≡ f
+characRP²Fun f =
+  funExt λ { point → refl ; (line i) → refl ; (square i i₁) → refl}
+
+RP²FunCharacIso : {A : RP² → Type ℓ}
+  → Iso ((x : RP²) → A x)
+         (Σ[ x ∈ A point ]
+           Σ[ p ∈ PathP (λ i → A (line i)) x x ]
+             SquareP (λ i j → A (square i j))
+               p (λ i → p (~ i)) refl refl)
+Iso.fun RP²FunCharacIso f = f point , cong f line , cong (cong f) square
+Iso.inv RP²FunCharacIso (x , p , q) point = x
+Iso.inv RP²FunCharacIso (x , p , q) (line i) = p i
+Iso.inv RP²FunCharacIso (x , p , q) (square i j) = q i j
+Iso.rightInv RP²FunCharacIso _ = refl
+Iso.leftInv RP²FunCharacIso f =
+  funExt λ { point → refl ; (line i) → refl ; (square i i₁) → refl}

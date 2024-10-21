@@ -1,21 +1,32 @@
 {-# OPTIONS --safe #-}
 
+{-
+   Category whose objects are functors and morphisms are natural transformations.
+
+   Includes the following
+   - isos in FUNCTOR are precisely the pointwise isos
+   - FUNCTOR C D is univalent when D is
+
+-}
+
 module Cubical.Categories.Instances.Functors where
 
-open import Cubical.Categories.Category renaming (isIso to isIsoC)
-open import Cubical.Categories.Functor.Base
-open import Cubical.Categories.NaturalTransformation.Base
-open import Cubical.Categories.NaturalTransformation.Properties
-open import Cubical.Categories.Morphism
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
 open import Cubical.Foundations.Equiv.Properties
 open import Cubical.Foundations.HLevels
 open import Cubical.Foundations.Isomorphism
 
+open import Cubical.Categories.Category renaming (isIso to isIsoC)
+open import Cubical.Categories.Constructions.BinProduct
+open import Cubical.Categories.Functor.Base
+open import Cubical.Categories.Morphism
+open import Cubical.Categories.NaturalTransformation.Base
+open import Cubical.Categories.NaturalTransformation.Properties
+
 private
   variable
-    ℓC ℓC' ℓD ℓD' : Level
+    ℓC ℓC' ℓD ℓD' ℓE ℓE' : Level
 
 module _ (C : Category ℓC ℓC') (D : Category ℓD ℓD') where
   open Category
@@ -102,3 +113,28 @@ module _ (C : Category ℓC ℓC') (D : Category ℓD ℓD') where
   isUnivalentFUNCTOR isUnivD .univ _ _ =
     isEquiv[equivFunA≃B∘f]→isEquiv[f] _ FUNCTORIso≃NatIso
       (subst isEquiv (λ i p → Path→FUNCTORIso→NatIso p i) (Path≃NatIso isUnivD .snd))
+
+  appF : Functor (FUNCTOR ×C C) D
+  appF .F-ob (F , c) = F ⟅ c ⟆
+  appF .F-hom {F , c} {G , d} (α , f) = α .N-ob d ∘⟨ D ⟩ F .F-hom f
+  appF .F-id {F , c} =
+    D .id ∘⟨ D ⟩ F .F-hom (C .id) ≡⟨ D .⋆IdR (F .F-hom (C .id)) ⟩
+    F .F-hom (C .id) ≡⟨ F .F-id ⟩
+    D .id ∎
+  appF .F-seq {F , c}{G , d}{H , e} (α , f) (β , g ) =
+    (β .N-ob e ∘⟨ D ⟩ α .N-ob e) ∘⟨ D ⟩ F .F-hom (g ∘⟨ C ⟩ f)
+      ≡⟨ (λ i → (β .N-ob e ∘⟨ D ⟩ α .N-ob e) ∘⟨ D ⟩ F .F-seq f g i) ⟩
+    (β .N-ob e ∘⟨ D ⟩ α .N-ob e) ∘⟨ D ⟩ (F .F-hom g ∘⟨ D ⟩ F .F-hom f)
+      ≡⟨ sym (D .⋆Assoc _ _ _) ⟩
+    β .N-ob e ∘⟨ D ⟩ (α .N-ob e ∘⟨ D ⟩ (F .F-hom g ∘⟨ D ⟩ F .F-hom f))
+      ≡⟨ (λ i → β .N-ob e
+                ∘⟨ D ⟩ D .⋆Assoc (F .F-hom f) (F .F-hom g) (α .N-ob e) i) ⟩
+    β .N-ob e ∘⟨ D ⟩ ((α .N-ob e ∘⟨ D ⟩ F .F-hom g) ∘⟨ D ⟩ F .F-hom f)
+      ≡⟨ (λ i → β .N-ob e ∘⟨ D ⟩ α .N-hom g i ∘⟨ D ⟩ F .F-hom f) ⟩
+    β .N-ob e ∘⟨ D ⟩ ((G .F-hom g ∘⟨ D ⟩ α .N-ob d) ∘⟨ D ⟩ F .F-hom f)
+      ≡⟨ (λ i → β .N-ob e
+                ∘⟨ D ⟩ D .⋆Assoc (F .F-hom f) (α .N-ob d) (G .F-hom g) (~ i) ) ⟩
+    β .N-ob e ∘⟨ D ⟩ (G .F-hom g ∘⟨ D ⟩ (α .N-ob d ∘⟨ D ⟩ F .F-hom f))
+      ≡⟨ D .⋆Assoc _ _ _ ⟩
+    (β .N-ob e ∘⟨ D ⟩ G .F-hom g) ∘⟨ D ⟩ (α .N-ob d ∘⟨ D ⟩ F .F-hom f) ∎
+

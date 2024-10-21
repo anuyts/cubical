@@ -194,8 +194,26 @@ predℕ-≤-predℕ {suc m} {suc n} ineq = pred-≤-pred ineq
 <-+-< : m < n → k < l → m + k < n + l
 <-+-<  m<n k<l = <-trans (<-+k m<n) (<-k+ k<l)
 
+¬-suc-n<n : {n : ℕ} → ¬ (suc n < n)
+¬-suc-n<n {n = n} = <-asym (1 , refl)
+
 <-+-≤ : m < n → k ≤ l → m + k < n + l
 <-+-≤ p q = <≤-trans (<-+k p) (≤-k+ q)
+
+¬squeeze< : {n m : ℕ} → ¬ (n < m) × (m < suc n)
+¬squeeze< {n = n} ((zero , p) , t) = ¬m<m (subst (_< suc n) (sym p) t)
+¬squeeze< {n = n}  ((suc diff1 , p) , q) =
+  ¬m<m (<-trans help (subst (_< suc n) (sym p) q))
+  where
+  help : suc n < suc (diff1 + suc n)
+  help = diff1 , +-suc diff1 (suc n)
+
+¬-<-suc : {n m : ℕ} → n < m → ¬ m < suc n
+¬-<-suc {n = n} {m = m} (zero , q) p = ¬m<m (subst (_< suc n) (sym q) p)
+¬-<-suc {n = n} {m = m} (suc diff , q) p = ¬m<m (<-trans p lem)
+  where
+  lem : suc n < m
+  lem = diff , +-suc diff (suc n) ∙ q
 
 <-·sk : m < n → m · suc k < n · suc k
 <-·sk {m} {n} {k} (d , r) = (d · suc k + k) , reason where
@@ -252,8 +270,14 @@ min-≤-right {suc m} {suc n} = suc-≤-suc min-≤-right
 ... | yes m≤n = yes (suc-≤-suc m≤n)
 ... | no m≰n = no λ m+1≤n+1 → m≰n (pred-≤-pred m+1≤n+1 )
 
+≤Stable : ∀ m n → Stable (m ≤ n)
+≤Stable m n = Dec→Stable (≤Dec m n)
+
 <Dec : ∀ m n → Dec (m < n)
 <Dec m n = ≤Dec (suc m) n
+
+<Stable : ∀ m n → Stable (m < n)
+<Stable m n = Dec→Stable (<Dec m n)
 
 Trichotomy-suc : Trichotomy m n → Trichotomy (suc m) (suc n)
 Trichotomy-suc (lt m<n) = lt (suc-≤-suc m<n)
@@ -265,6 +289,12 @@ zero ≟ zero = eq refl
 zero ≟ suc n = lt (n , +-comm n 1)
 suc m ≟ zero = gt (m , +-comm m 1)
 suc m ≟ suc n = Trichotomy-suc (m ≟ n)
+
+Dichotomyℕ : ∀ (n m : ℕ) → (n ≤ m) ⊎ (n > m)
+Dichotomyℕ n m with (n ≟ m)
+... | lt x = inl (<-weaken x)
+... | Trichotomy.eq x = inl (0 , x)
+... | gt x = inr x
 
 splitℕ-≤ : (m n : ℕ) → (m ≤ n) ⊎ (n < m)
 splitℕ-≤ m n with m ≟ n

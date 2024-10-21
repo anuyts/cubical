@@ -1,16 +1,15 @@
 {-# OPTIONS --safe #-}
 module Cubical.Data.Prod.Properties where
 
-open import Cubical.Core.Everything
-
-open import Cubical.Data.Prod.Base
-open import Cubical.Data.Sigma renaming (_×_ to _×Σ_) hiding (prodIso ; toProdIso ; curryIso)
-
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Equiv
+open import Cubical.Foundations.Function
 open import Cubical.Foundations.HLevels
 open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.Univalence
+
+open import Cubical.Data.Prod.Base
+open import Cubical.Data.Sigma renaming (_×_ to _×Σ_) hiding (prodIso ; toProdIso ; curryIso)
 
 private
   variable
@@ -21,7 +20,7 @@ private
 -- Swapping is an equivalence
 
 ×≡ : {a b : A × B} → proj₁ a ≡ proj₁ b → proj₂ a ≡ proj₂ b → a ≡ b
-×≡ {a = (a1 , b1)} {b = (a2 , b2)} id1 id2 i = (id1 i) , (id2 i)
+×≡ {a = (_ , _)} {b = (_ , _)} id1 id2 i = (id1 i) , (id2 i)
 
 swap : A × B → B × A
 swap (x , y) = (y , x)
@@ -109,3 +108,17 @@ Iso.fun curryIso f a b = f (a , b)
 Iso.inv curryIso f (a , b) = f a b
 Iso.rightInv curryIso a = refl
 Iso.leftInv curryIso f = funExt λ {(a , b) → refl}
+
+fiber-map-× : ∀ {ℓ ℓ' ℓ''} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ''}
+    (f : B → C) (a : A) (c : C)
+  → Iso (fiber f c) (fiber (map-× (idfun A) f) (a , c))
+fiber-map-× f a c .Iso.fun z .fst .fst = a
+fiber-map-× f a c .Iso.fun z .fst .snd = z .fst
+fiber-map-× f a c .Iso.fun z .snd = ≡-× refl (z .snd)
+fiber-map-× f a c .Iso.inv z .fst = z .fst .snd
+fiber-map-× f a c .Iso.inv z .snd = cong snd (z .snd)
+fiber-map-× f a c .Iso.rightInv ((az , bz) , e) j .fst .fst = cong fst e (~ j)
+fiber-map-× f a c .Iso.rightInv ((az , bz) , e) j .fst .snd = bz
+fiber-map-× f a c .Iso.rightInv ((az , bz) , e) j .snd k .fst = cong fst e (k ∨ ~ j)
+fiber-map-× f a c .Iso.rightInv ((az , bz) , e) j .snd k .snd = cong snd e k
+fiber-map-× f a c .Iso.leftInv z = refl

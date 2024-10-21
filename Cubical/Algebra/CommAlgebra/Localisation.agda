@@ -1,4 +1,4 @@
-{-# OPTIONS --safe --experimental-lossy-unification #-}
+{-# OPTIONS --safe --lossy-unification #-}
 module Cubical.Algebra.CommAlgebra.Localisation where
 
 open import Cubical.Foundations.Prelude
@@ -25,15 +25,13 @@ open import Cubical.Algebra.CommRing.Properties
 open import Cubical.Algebra.CommRing.Ideal
 open import Cubical.Algebra.CommRing.FGIdeal
 open import Cubical.Algebra.CommRing.RadicalIdeal
-open import Cubical.Algebra.CommRing.Localisation.Base
-open import Cubical.Algebra.CommRing.Localisation.UniversalProperty
-open import Cubical.Algebra.CommRing.Localisation.InvertingElements
+open import Cubical.Algebra.CommRing.Localisation
 open import Cubical.Algebra.Ring
 open import Cubical.Algebra.Algebra
 open import Cubical.Algebra.CommAlgebra.Base
 open import Cubical.Algebra.CommAlgebra.Properties
 
-open import Cubical.Tactics.CommRingSolver.Reflection
+open import Cubical.Tactics.CommRingSolver
 
 open import Cubical.HITs.SetQuotients as SQ
 open import Cubical.HITs.PropositionalTruncation as PT
@@ -62,6 +60,8 @@ module AlgLoc (R' : CommRing ℓ)
  S⁻¹RAsCommAlg : CommAlgebra R' ℓ
  S⁻¹RAsCommAlg = toCommAlg (S⁻¹RAsCommRing , /1AsCommRingHom)
 
+ LocCommAlg→CommRingPath : CommAlgebra→CommRing S⁻¹RAsCommAlg ≡ S⁻¹RAsCommRing
+ LocCommAlg→CommRingPath = CommAlgebra→CommRing≡ (S⁻¹RAsCommRing , /1AsCommRingHom)
 
  hasLocAlgUniversalProp : (A : CommAlgebra R' ℓ)
                         → (∀ s → s ∈ S' → _⋆_ (snd A) s (1a (snd A)) ∈ (CommAlgebra→CommRing A) ˣ)
@@ -136,7 +136,7 @@ module AlgLoc (R' : CommRing ℓ)
  S⁻¹RAlgCharEquiv : (A' : CommRing ℓ) (φ : CommRingHom R' A')
                   → PathToS⁻¹R  R' S' SMultClosedSubset A' φ
                   → CommAlgebraEquiv S⁻¹RAsCommAlg (toCommAlg (A' , φ))
- S⁻¹RAlgCharEquiv A' φ cond = toCommAlgebraEquiv _ _
+ S⁻¹RAlgCharEquiv A' φ cond = toCommAlgebraEquiv (S⁻¹RAsCommRing , /1AsCommRingHom) (A' , φ)
                                 (S⁻¹RCharEquiv R' S' SMultClosedSubset A' φ cond)
                                 (RingHom≡ (S⁻¹RHasUniversalProp A' φ (cond .φS⊆Aˣ) .fst .snd))
   where open PathToS⁻¹R
@@ -149,6 +149,12 @@ R[1/_]AsCommAlgebra {R = R} f = S⁻¹RAsCommAlg [ f ⁿ|n≥0] (powersFormMultC
  open AlgLoc R
  open InvertingElementsBase R
 
+module _  {R : CommRing ℓ} (f : fst R) where
+  open InvertingElementsBase R
+  open AlgLoc R [ f ⁿ|n≥0] (powersFormMultClosedSubset f)
+
+  invElCommAlgebra→CommRingPath : CommAlgebra→CommRing R[1/ f ]AsCommAlgebra ≡ R[1/ f ]AsCommRing
+  invElCommAlgebra→CommRingPath = LocCommAlg→CommRingPath
 
 module AlgLocTwoSubsets (R' : CommRing ℓ)
                         (S₁ : ℙ (fst R')) (S₁MultClosedSubset : isMultClosedSubset R' S₁)
@@ -302,10 +308,7 @@ module DoubleAlgLoc (R : CommRing ℓ) (f g : (fst R)) where
      helper2 : (α : FinVec (fst R) 1)
              → x ^ n ≡ linearCombination R α (replicateFinVec 1 y)
              → x ∈ᵢ √ ⟨ y · x ⟩
-     helper2 α p = ∣ (suc n) , ∣ α , cong (x ·_) p ∙ useSolver x y (α zero) ∣₁ ∣₁
-      where
-      useSolver : ∀ x y a → x · (a · y + 0r) ≡ a · (y · x) + 0r
-      useSolver = solve R
+     helper2 α p = ∣ (suc n) , ∣ α , cong (x ·_) p ∙ solve! R ∣₁ ∣₁
 
   toUnit2 : ∀ s → s ∈ [_ⁿ|n≥0] R g → s ⋆ 1a ∈ R[1/fg]ˣ
   toUnit2 s s∈[gⁿ|n≥0] = subst-∈ R[1/fg]ˣ (sym (·IdR (s /1ᶠᵍ)))

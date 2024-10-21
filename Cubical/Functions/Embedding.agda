@@ -181,6 +181,9 @@ isEquiv→isEmbedding e = λ _ _ → congEquiv (_ , e) .snd
 Equiv→Embedding : A ≃ B → A ↪ B
 Equiv→Embedding (f , isEquivF) = (f , isEquiv→isEmbedding isEquivF)
 
+id↪ : ∀ {ℓ} → (A : Type ℓ) → A ↪ A
+id↪ A = Equiv→Embedding (idEquiv A)
+
 iso→isEmbedding : ∀ {ℓ} {A B : Type ℓ}
   → (isom : Iso A B)
   -------------------------------
@@ -201,32 +204,20 @@ Embedding-into-Discrete→Discrete (f , isEmbeddingF) _≟_ x y with f x ≟ f y
 ... | yes p = yes (invIsEq (isEmbeddingF x y) p)
 ... | no ¬p = no (¬p ∘ cong f)
 
-Embedding-into-isProp→isProp : A ↪ B → isProp B → isProp A
-Embedding-into-isProp→isProp (f , isEmbeddingF) isProp-B x y
-  = invIsEq (isEmbeddingF x y) (isProp-B (f x) (f y))
-
-Embedding-into-isSet→isSet : A ↪ B → isSet B → isSet A
-Embedding-into-isSet→isSet (f , isEmbeddingF) isSet-B x y p q =
-  p ≡⟨ sym (retIsEq isEquiv-cong-f p) ⟩
-  cong-f⁻¹ (cong f p) ≡⟨ cong cong-f⁻¹ cong-f-p≡cong-f-q ⟩
-  cong-f⁻¹ (cong f q) ≡⟨ retIsEq isEquiv-cong-f q ⟩
-  q ∎
-  where
-    cong-f-p≡cong-f-q = isSet-B (f x) (f y) (cong f p) (cong f q)
-    isEquiv-cong-f = isEmbeddingF x y
-    cong-f⁻¹ = invIsEq isEquiv-cong-f
-
 Embedding-into-hLevel→hLevel
   : ∀ n → A ↪ B → isOfHLevel (suc n) B → isOfHLevel (suc n) A
-Embedding-into-hLevel→hLevel zero = Embedding-into-isProp→isProp
-Embedding-into-hLevel→hLevel (suc n) (f , isEmbeddingF) Blvl x y
-  = isOfHLevelRespectEquiv (suc n) (invEquiv equiv) subLvl
-  where
-  equiv : (x ≡ y) ≃ (f x ≡ f y)
-  equiv .fst = cong f
-  equiv .snd = isEmbeddingF x y
-  subLvl : isOfHLevel (suc n) (f x ≡ f y)
-  subLvl = Blvl (f x) (f y)
+Embedding-into-hLevel→hLevel n (f , isEmbeddingF) isOfHLevelB =
+  isOfHLevelPath'⁻ n
+    (λ a a' →
+      isOfHLevelRespectEquiv n
+        (invEquiv (cong f , isEmbeddingF a a'))
+        (isOfHLevelPath' n isOfHLevelB (f a) (f a')))
+
+Embedding-into-isProp→isProp : A ↪ B → isProp B → isProp A
+Embedding-into-isProp→isProp = Embedding-into-hLevel→hLevel 0
+
+Embedding-into-isSet→isSet : A ↪ B → isSet B → isSet A
+Embedding-into-isSet→isSet = Embedding-into-hLevel→hLevel 1
 
 -- We now show that the powerset is the subtype classifier
 -- i.e. ℙ X ≃ Σ[A ∈ Type ℓ] (A ↪ X)
@@ -439,16 +430,35 @@ _≃Emb_ = EmbeddingIdentityPrinciple.f≃g
 EmbeddingIP : {B : Type ℓ} (f g : Embedding B ℓ') → f ≃Emb g ≃ (f ≡ g)
 EmbeddingIP = EmbeddingIdentityPrinciple.EmbeddingIP
 
-module _ {A : Type ℓ} (P : A → hProp ℓ') where
-  private
-    subtypeHasPropFibers : hasPropFibers (λ (x : Σ[ y ∈ A ] fst (P y)) → fst x)
-    subtypeHasPropFibers x = isPropFiber
-      where isPropFiber : isProp (fiber fst x)
-            isPropFiber = isOfHLevelRespectEquiv 1 (invEquiv (fiberEquiv (λ x → fst (P x)) x)) (snd (P x))
+-- Cantor's theorem for sets
+Set-Embedding-into-Powerset : {A : Type ℓ} → isSet A → A ↪ ℙ A
+Set-Embedding-into-Powerset {A = A} setA
+  = fun , (injEmbedding isSetℙ (λ y → sym (H₃ (H₂ y))))
+  where fun : A → ℙ A
+        fun a b = (a ≡ b) , (setA a b)
 
-  subtypePathReflection : (x y : Σ[ a ∈ A ] fst (P a))
-                          → fst x ≡ fst y → x ≡ y
-  subtypePathReflection x y q = Iso.inv
-                                    (equivToIso
-                                     (_ , hasPropFibers→isEmbedding subtypeHasPropFibers x y))
-                                    q
+        H₂ : {a b : A} → fun a ≡ fun b → a ∈ (fun b)
+        H₂ {a} fa≡fb = transport (cong (fst ∘ (_$ a)) fa≡fb) refl
+
+        H₃ : {a b : A} → b ∈ (fun a) → a ≡ b
+        H₃ b∈fa = b∈fa
+
+×Monotone↪ : ∀ {ℓa ℓb ℓc ℓd}
+                {A : Type ℓa} {B : Type ℓb} {C : Type ℓc} {D : Type ℓd}
+            → A ↪ C → B ↪ D → (A × B) ↪ (C × D)
+×Monotone↪ {A = A} {B = B} {C = C} {D = D} (f , embf) (g , embg)
+  = (map-× f g) , emb
+    where apmap : ∀ x y → x ≡ y → map-× f g x ≡ map-× f g y
+          apmap x y x≡y = ΣPathP (cong (f ∘ fst) x≡y , cong (g ∘ snd) x≡y)
+
+          equiv : ∀ x y → isEquiv (apmap x y)
+          equiv x y = ((invEquiv ΣPathP≃PathPΣ)
+                    ∙ₑ (≃-× ((cong f) , (embf (fst x) (fst y)))
+                             ((cong g) , (embg (snd x) (snd y))))
+                    ∙ₑ ΣPathP≃PathPΣ) .snd
+
+          emb : isEmbedding (map-× f g)
+          emb x y = equiv x y
+
+EmbeddingΣProp : {A : Type ℓ} → {B : A → Type ℓ'} → (∀ a → isProp (B a)) → Σ A B ↪ A
+EmbeddingΣProp f = fst , (λ _ _ → isEmbeddingFstΣProp f)

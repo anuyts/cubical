@@ -13,7 +13,7 @@ open import Cubical.Foundations.Equiv
 open import Cubical.Foundations.Powerset
 open import Cubical.Foundations.Isomorphism
 
-open import Cubical.Data.Sum
+open import Cubical.Data.Sum hiding (map)
 open import Cubical.Data.Sigma
 open import Cubical.Data.FinData.Base as Fin
 open import Cubical.Data.Nat renaming (zero to ℕzero ; suc to ℕsuc
@@ -116,6 +116,15 @@ discreteFin (suc x) (suc y) with discreteFin x y
 isSetFin : ∀{k} → isSet (Fin k)
 isSetFin = Discrete→isSet discreteFin
 
+isWeaken? : ∀ {n} (p : Fin (ℕsuc n)) → Dec (Σ[ q ∈ Fin n ] p ≡ weakenFin q)
+isWeaken? {ℕzero} zero = no λ (q , eqn) → case q of λ ()
+isWeaken? {ℕsuc n} zero = yes (zero , refl)
+isWeaken? {ℕsuc n} (suc p) with isWeaken? {n} p
+... | yes (q , p≡wq) = yes (suc q , cong suc p≡wq)
+... | no  p≢wq = no λ
+  { (zero , sp≡wq) → snotz sp≡wq
+  ; (suc q , sp≡wq) → p≢wq (q , cong predFin sp≡wq)
+  }
 
 data biEq {n : ℕ} (i j : Fin n) : Type where
   eq  :   i ≡ j → biEq i j

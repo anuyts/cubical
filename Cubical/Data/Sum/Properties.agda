@@ -1,17 +1,20 @@
 {-# OPTIONS --safe #-}
 module Cubical.Data.Sum.Properties where
 
-open import Cubical.Core.Everything
 open import Cubical.Foundations.Prelude
+open import Cubical.Foundations.Function
 open import Cubical.Foundations.HLevels
-open import Cubical.Functions.Embedding
 open import Cubical.Foundations.Equiv
 open import Cubical.Foundations.Isomorphism
-open import Cubical.Data.Empty
+
+open import Cubical.Functions.Embedding
+
+open import Cubical.Data.Sum.Base as ⊎
+open import Cubical.Data.Empty as ⊥
 open import Cubical.Data.Nat
 open import Cubical.Data.Sigma
 
-open import Cubical.Data.Sum.Base
+open import Cubical.Relation.Nullary
 
 open Iso
 
@@ -98,6 +101,12 @@ isOfHLevel⊎ n lA lB c c' =
     (⊎Path.decodeEncode c c')
     (⊎Path.isOfHLevelCover n lA lB c c')
 
+isProp⊎ : isProp A → isProp B → (A → B → ⊥) → isProp (A ⊎ B)
+isProp⊎ propA _ _ (inl x) (inl y) i = inl (propA x y i)
+isProp⊎ _ _ AB⊥ (inl x) (inr y) = ⊥.rec (AB⊥ x y)
+isProp⊎ _ _ AB⊥ (inr x) (inl y) = ⊥.rec (AB⊥ y x)
+isProp⊎ _ propB _ (inr x) (inr y) i = inr (propB x y i)
+
 isSet⊎ : isSet A → isSet B → isSet (A ⊎ B)
 isSet⊎ = isOfHLevel⊎ 0
 
@@ -106,6 +115,14 @@ isGroupoid⊎ = isOfHLevel⊎ 1
 
 is2Groupoid⊎ : is2Groupoid A → is2Groupoid B → is2Groupoid (A ⊎ B)
 is2Groupoid⊎ = isOfHLevel⊎ 2
+
+discrete⊎ : Discrete A → Discrete B → Discrete (A ⊎ B)
+discrete⊎ decA decB (inl a) (inl a') =
+  mapDec (cong inl) (λ p q → p (isEmbedding→Inj isEmbedding-inl _ _ q)) (decA a a')
+discrete⊎ decA decB (inl a) (inr b') = no (λ p → lower (⊎Path.encode (inl a) (inr b') p))
+discrete⊎ decA decB (inr b) (inl a') = no ((λ p → lower (⊎Path.encode (inr b) (inl a') p)))
+discrete⊎ decA decB (inr b) (inr b') =
+  mapDec (cong inr) (λ p q → p (isEmbedding→Inj isEmbedding-inr _ _ q)) (decB b b')
 
 ⊎Iso : Iso A C → Iso B D → Iso (A ⊎ B) (C ⊎ D)
 fun (⊎Iso iac ibd) (inl x) = inl (iac .fun x)
@@ -150,14 +167,41 @@ leftInv ⊎-assoc-Iso (inr _)        = refl
 ⊎-assoc-≃ : (A ⊎ B) ⊎ C ≃ A ⊎ (B ⊎ C)
 ⊎-assoc-≃ = isoToEquiv ⊎-assoc-Iso
 
-⊎-⊥-Iso : Iso (A ⊎ ⊥) A
-fun ⊎-⊥-Iso (inl x) = x
-inv ⊎-⊥-Iso x       = inl x
-rightInv ⊎-⊥-Iso _      = refl
-leftInv ⊎-⊥-Iso (inl _) = refl
+⊎-IdR-⊥-Iso : Iso (A ⊎ ⊥) A
+fun ⊎-IdR-⊥-Iso (inl x) = x
+inv ⊎-IdR-⊥-Iso x       = inl x
+rightInv ⊎-IdR-⊥-Iso _      = refl
+leftInv ⊎-IdR-⊥-Iso (inl _) = refl
 
-⊎-⊥-≃ : A ⊎ ⊥ ≃ A
-⊎-⊥-≃ = isoToEquiv ⊎-⊥-Iso
+⊎-IdL-⊥-Iso : Iso (⊥ ⊎ A) A
+fun ⊎-IdL-⊥-Iso (inr x) = x
+inv ⊎-IdL-⊥-Iso x       = inr x
+rightInv ⊎-IdL-⊥-Iso _      = refl
+leftInv ⊎-IdL-⊥-Iso (inr _) = refl
+
+⊎-IdL-⊥*-Iso : ∀{ℓ} → Iso (⊥* {ℓ} ⊎ A) A
+fun ⊎-IdL-⊥*-Iso (inr x) = x
+inv ⊎-IdL-⊥*-Iso x       = inr x
+rightInv ⊎-IdL-⊥*-Iso _      = refl
+leftInv ⊎-IdL-⊥*-Iso (inr _) = refl
+
+⊎-IdR-⊥*-Iso : ∀{ℓ} → Iso (A ⊎ ⊥* {ℓ}) A
+fun ⊎-IdR-⊥*-Iso (inl x) = x
+inv ⊎-IdR-⊥*-Iso x       = inl x
+rightInv ⊎-IdR-⊥*-Iso _      = refl
+leftInv ⊎-IdR-⊥*-Iso (inl _) = refl
+
+⊎-IdR-⊥-≃ : A ⊎ ⊥ ≃ A
+⊎-IdR-⊥-≃ = isoToEquiv ⊎-IdR-⊥-Iso
+
+⊎-IdL-⊥-≃ : ⊥ ⊎ A ≃ A
+⊎-IdL-⊥-≃ = isoToEquiv ⊎-IdL-⊥-Iso
+
+⊎-IdR-⊥*-≃ : ∀{ℓ} → A ⊎ ⊥* {ℓ} ≃ A
+⊎-IdR-⊥*-≃ = isoToEquiv ⊎-IdR-⊥*-Iso
+
+⊎-IdL-⊥*-≃ : ∀{ℓ} → ⊥* {ℓ} ⊎ A ≃ A
+⊎-IdL-⊥*-≃ = isoToEquiv ⊎-IdL-⊥*-Iso
 
 Π⊎Iso : Iso ((x : A ⊎ B) → E x) (((a : A) → E (inl a)) × ((b : B) → E (inr b)))
 fun Π⊎Iso f .fst a = f (inl a)
@@ -179,12 +223,137 @@ rightInv Σ⊎Iso (inr (b , eb)) = refl
 leftInv Σ⊎Iso (inl a , ea) = refl
 leftInv Σ⊎Iso (inr b , eb) = refl
 
+×DistR⊎Iso : Iso (A × (B ⊎ C)) ((A × B) ⊎ (A × C))
+fun ×DistR⊎Iso (a , inl b) = inl (a , b)
+fun ×DistR⊎Iso (a , inr c) = inr (a , c)
+inv ×DistR⊎Iso (inl (a , b)) = a , inl b
+inv ×DistR⊎Iso (inr (a , c)) = a , inr c
+rightInv ×DistR⊎Iso (inl (a , b)) = refl
+rightInv ×DistR⊎Iso (inr (a , c)) = refl
+leftInv ×DistR⊎Iso (a , inl b) = refl
+leftInv ×DistR⊎Iso (a , inr c) = refl
+
 Π⊎≃ : ((x : A ⊎ B) → E x) ≃ ((a : A) → E (inl a)) × ((b : B) → E (inr b))
 Π⊎≃ = isoToEquiv Π⊎Iso
 
 Σ⊎≃ : (Σ (A ⊎ B) E) ≃ ((Σ A (λ a → E (inl a))) ⊎ (Σ B (λ b → E (inr b))))
 Σ⊎≃ = isoToEquiv Σ⊎Iso
 
-map-⊎ : (A → C) → (B → D) → A ⊎ B → C ⊎ D
-map-⊎ f _ (inl a) = inl (f a)
-map-⊎ _ g (inr b) = inr (g b)
+⊎Monotone↪ : A ↪ C → B ↪ D → (A ⊎ B) ↪ (C ⊎ D)
+⊎Monotone↪ (f , embf) (g , embg) = (map f g) , emb
+  where coverToMap : ∀ x y → ⊎Path.Cover x y
+                           → ⊎Path.Cover (map f g x) (map f g y)
+        coverToMap (inl _) (inl _) cover = lift (cong f (lower cover))
+        coverToMap (inr _) (inr _) cover = lift (cong g (lower cover))
+
+        equiv : ∀ x y → isEquiv (coverToMap x y)
+        equiv (inl a₀) (inl a₁)
+          = ((invEquiv LiftEquiv)
+            ∙ₑ ((cong f) , (embf a₀ a₁))
+            ∙ₑ LiftEquiv) .snd
+        equiv (inl a₀) (inr b₁) .equiv-proof ()
+        equiv (inr b₀) (inl a₁) .equiv-proof ()
+        equiv (inr b₀) (inr b₁)
+          = ((invEquiv LiftEquiv)
+            ∙ₑ ((cong g) , (embg b₀ b₁))
+            ∙ₑ LiftEquiv) .snd
+
+        lemma : ∀ x y
+              → ∀ (p : x ≡ y)
+              → cong (map f g) p ≡
+                     ⊎Path.decode
+                       (map f g x)
+                       (map f g y)
+                       (coverToMap x y (⊎Path.encode x y p))
+        lemma (inl a₀) _
+          = J (λ y p
+              → cong (map f g) p ≡
+                     ⊎Path.decode (map f g (inl a₀))
+                                  (map f g y)
+                                  (coverToMap (inl a₀) y
+                                              (⊎Path.encode (inl a₀) y p)))
+            (sym $ cong (cong inl) (cong (cong f) (transportRefl _)))
+        lemma (inr b₀) _
+          = J (λ y p
+              → cong (map f g) p ≡
+                     ⊎Path.decode
+                       (map f g (inr b₀))
+                       (map f g y)
+                       (coverToMap (inr b₀) y (⊎Path.encode (inr b₀) y p)))
+              (sym $ cong (cong inr) (cong (cong g) (transportRefl _)))
+
+        emb : isEmbedding (map f g)
+        emb x y = subst (λ eq → isEquiv eq)
+                        (sym (funExt (lemma x y)))
+                          ((x ≡ y         ≃⟨ invEquiv (⊎Path.Cover≃Path x y) ⟩
+                          ⊎Path.Cover x y ≃⟨ (coverToMap x y) , (equiv x y) ⟩
+                          ⊎Path.Cover
+                            (map f g x)
+                            (map f g y)   ≃⟨ ⊎Path.Cover≃Path
+                                             (map f g x)
+                                             (map f g y) ⟩
+                          map f g x ≡ map f g y ■) .snd)
+
+-- A ⊎ B ≃ C ⊎ D implies B ≃ D if the first equiv respects inl
+Iso⊎→Iso : (f : Iso A C) (e : Iso (A ⊎ B) (C ⊎ D))
+   → ((a : A) → Iso.fun e (inl a) ≡ inl (Iso.fun f a))
+   → Iso B D
+Iso⊎→Iso {A = A} {C = C} {B = B} {D = D} f e p = Iso'
+  where
+  ⊥-fib : ∀ {ℓ ℓ'} {A : Type ℓ} {B : Type ℓ'} → A ⊎ B → Type
+  ⊥-fib (inl x) = ⊥
+  ⊥-fib (inr x) = Unit
+
+  module _ {A : Type ℓa} {B : Type ℓb} {C : Type ℓc} {D : Type ℓd}
+         (f : Iso A C)
+         (e : Iso (A ⊎ B) (C ⊎ D))
+         (p : (a : A) → Iso.fun e (inl a) ≡ inl (Iso.fun f a)) where
+    T : (b : B) → Type _
+    T b = Σ[ d' ∈ C ⊎ D ] (Iso.fun e (inr b) ≡ d')
+
+    T-elim : ∀ {ℓ} (b : B) {P : (x : T b) → Type ℓ}
+           → ((d : D) (s : _) → P (inr d , s))
+           → (x : _) → P x
+    T-elim b ind (inl x , q) =
+      ⊥.rec (subst ⊥-fib (sym (sym (Iso.leftInv e _)
+          ∙ cong (Iso.inv e)
+             (p _ ∙ cong inl (Iso.rightInv f x) ∙ sym q)
+          ∙ Iso.leftInv e _)) tt)
+    T-elim b ind (inr x , y) = ind x y
+
+  e-pres-inr-help : (b : B) → T f e p b  → D
+  e-pres-inr-help b = T-elim f e p b λ d _ → d
+
+  p' : (a : C) → Iso.inv e (inl a) ≡ inl (Iso.inv f a)
+  p' c = cong (Iso.inv e ∘ inl) (sym (Iso.rightInv f c))
+      ∙∙ cong (Iso.inv e) (sym (p (Iso.inv f c)))
+      ∙∙ Iso.leftInv e _
+
+  e⁻-pres-inr-help : (d : D) → T (invIso f) (invIso e) p' d → B
+  e⁻-pres-inr-help d = T-elim (invIso f) (invIso e) p' d λ b _ → b
+
+  e-pres-inr : B → D
+  e-pres-inr b = e-pres-inr-help b (_ , refl)
+
+  e⁻-pres-inr : D → B
+  e⁻-pres-inr d = e⁻-pres-inr-help d (_ , refl)
+
+  lem1 : (b : B) (e : T f e p b) (d : _)
+    → e⁻-pres-inr-help (e-pres-inr-help b e) d ≡ b
+  lem1 b = T-elim f e p b λ d s
+    → T-elim (invIso f) (invIso e) p' _
+      λ b' s' → invEq (_ , isEmbedding-inr _ _)
+        (sym s' ∙ cong (Iso.inv e) (sym s) ∙ Iso.leftInv e _)
+
+  lem2 : (d : D) (e : T (invIso f) (invIso e) p' d ) (t : _)
+    → e-pres-inr-help (e⁻-pres-inr-help d e) t ≡ d
+  lem2 d = T-elim (invIso f) (invIso e) p' d
+    λ b s → T-elim f e p _ λ d' s'
+    → invEq (_ , isEmbedding-inr _ _)
+         (sym s' ∙ cong (Iso.fun e) (sym s) ∙ Iso.rightInv e _)
+
+  Iso' : Iso B D
+  Iso.fun Iso' = e-pres-inr
+  Iso.inv Iso' = e⁻-pres-inr
+  Iso.rightInv Iso' x = lem2 x (_ , refl) (_ , refl)
+  Iso.leftInv Iso' x = lem1 x (_ , refl) (_ , refl)

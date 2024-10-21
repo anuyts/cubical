@@ -29,6 +29,10 @@ record Category ℓ ℓ' : Type (ℓ-suc (ℓ-max ℓ ℓ')) where
   _∘_ : ∀ {x y z} (g : Hom[ y , z ]) (f : Hom[ x , y ]) → Hom[ x , z ]
   g ∘ f = f ⋆ g
 
+  ⟨_⟩⋆⟨_⟩ : {x y z : ob} {f f' : Hom[ x , y ]} {g g' : Hom[ y , z ]}
+          → f ≡ f' → g ≡ g' → f ⋆ g ≡ f' ⋆ g'
+  ⟨ ≡f ⟩⋆⟨ ≡g ⟩ = cong₂ _⋆_ ≡f ≡g
+
   infixr 9 _⋆_
   infixr 9 _∘_
 
@@ -37,6 +41,10 @@ open Category
 -- Helpful syntax/notation
 _[_,_] : (C : Category ℓ ℓ') → (x y : C .ob) → Type ℓ'
 _[_,_] = Hom[_,_]
+
+_End[_] : (C : Category ℓ ℓ') → (x : C .ob) → Type ℓ'
+C End[ x ] = C [ x , x ]
+
 
 -- Needed to define this in order to be able to make the subsequence syntax declaration
 seq' : ∀ (C : Category ℓ ℓ') {x y z} (f : C [ x , y ]) (g : C [ y , z ]) → C [ x , z ]
@@ -77,7 +85,6 @@ isPropIsIso {C = C} f p q i .sec j =
 isPropIsIso {C = C} f p q i .ret j =
   isSet→SquareP (λ i j → C .isSetHom)
     (p .ret) (q .ret) (λ i → f ⋆⟨ C ⟩ isPropIsIso {C = C} f p q i .inv) refl i j
-
 
 CatIso : (C : Category ℓ ℓ') (x y : C .ob) → Type ℓ'
 CatIso C x y = Σ[ f ∈ C [ x , y ] ] isIso C f
@@ -125,6 +132,10 @@ record isUnivalent (C : Category ℓ ℓ') : Type (ℓ-max ℓ ℓ') where
   isGroupoid-ob : isGroupoid (C .ob)
   isGroupoid-ob = isOfHLevelPath'⁻ 2 (λ _ _ → isOfHLevelRespectEquiv 2 (invEquiv (univEquiv _ _)) (isSet-CatIso _ _))
 
+isPropIsUnivalent : {C : Category ℓ ℓ'} → isProp (isUnivalent C)
+isPropIsUnivalent =
+ isPropRetract isUnivalent.univ _ (λ _ → refl)
+  (isPropΠ2 λ _ _ → isPropIsEquiv _ )
 
 -- Opposite category
 _^op : Category ℓ ℓ' → Category ℓ ℓ'
@@ -137,7 +148,6 @@ _⋆_ (C ^op) f g      = g ⋆⟨ C ⟩ f
 ⋆Assoc (C ^op) f g h = sym (C .⋆Assoc _ _ _)
 isSetHom (C ^op)     = C .isSetHom
 
-
 ΣPropCat : (C : Category ℓ ℓ') (P : ℙ (ob C)) → Category ℓ ℓ'
 ob (ΣPropCat C P) = Σ[ x ∈ ob C ] x ∈ P
 Hom[_,_] (ΣPropCat C P) x y = C [ fst x , fst y ]
@@ -147,3 +157,11 @@ _⋆_ (ΣPropCat C P) = _⋆_ C
 ⋆IdR (ΣPropCat C P) = ⋆IdR C
 ⋆Assoc (ΣPropCat C P) = ⋆Assoc C
 isSetHom (ΣPropCat C P) = isSetHom C
+
+isIsoΣPropCat : {C : Category ℓ ℓ'} {P : ℙ (ob C)}
+                {x y : ob C} (p : x ∈ P) (q : y ∈ P)
+                (f : C [ x , y ])
+              → isIso C f → isIso (ΣPropCat C P) {x , p} {y , q} f
+inv (isIsoΣPropCat p q f isIsoF) = isIsoF .inv
+sec (isIsoΣPropCat p q f isIsoF) = isIsoF .sec
+ret (isIsoΣPropCat p q f isIsoF) = isIsoF .ret

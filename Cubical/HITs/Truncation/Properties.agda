@@ -20,7 +20,7 @@ open Modality
 
 open import Cubical.Data.Nat hiding (elim)
 open import Cubical.Data.Sigma
-open import Cubical.Data.Bool
+open import Cubical.Data.Bool hiding (elim)
 open import Cubical.Data.Unit
 open import Cubical.HITs.Sn.Base
 open import Cubical.HITs.S1 hiding (rec ; elim)
@@ -253,14 +253,11 @@ isModal       (HLevelTruncModality n) = isOfHLevel n
 isPropIsModal (HLevelTruncModality n) = isPropIsOfHLevel n
 ◯             (HLevelTruncModality n) = hLevelTrunc n
 ◯-isModal     (HLevelTruncModality n) = isOfHLevelTrunc n
-η (HLevelTruncModality zero) _ = tt*
-η (HLevelTruncModality (suc n)) = ∣_∣
-◯-elim (HLevelTruncModality zero) cB _ tt* = cB tt* .fst
-◯-elim (HLevelTruncModality (suc n)) = elim
+η (HLevelTruncModality n) = ∣_∣ₕ
+◯-elim (HLevelTruncModality n) = elim
 ◯-elim-β (HLevelTruncModality zero) cB f a = cB tt* .snd (f a)
 ◯-elim-β (HLevelTruncModality (suc n)) = λ _ _ _ → refl
-◯-=-isModal (HLevelTruncModality zero) x y = (isOfHLevelUnit* 1 x y) , (isOfHLevelUnit* 2 x y _)
-◯-=-isModal (HLevelTruncModality (suc n)) = isOfHLevelPath (suc n) (isOfHLevelTrunc (suc n))
+◯-=-isModal (HLevelTruncModality n) = isOfHLevelPath n (isOfHLevelTrunc n)
 
 -- universal property
 
@@ -498,6 +495,14 @@ PathIdTruncIso zero =
     (isOfHLevelTrunc 1 _ _ , isOfHLevelPath 1 (isOfHLevelTrunc 1) ∣ _ ∣ ∣ _ ∣ _)
     (isOfHLevelUnit* 0)
 PathIdTruncIso (suc n) = ΩTrunc.IsoFinal ∣ _ ∣ ∣ _ ∣
+
+PathPIdTruncIso : {A : I → Type ℓ} {a : A i0} {b : A i1} (n : HLevel)
+  → Iso (PathP (λ i → ∥ A i ∥ suc n) ∣ a ∣ ∣ b ∣) (∥ PathP (λ i → A i) a b ∥ n)
+PathPIdTruncIso {A = A} n = lem (A i0) (A i1) (λ i → A i) n
+  where
+  lem : ∀ {ℓ} (A B : Type ℓ) (A' : A ≡ B) {a : A} {b : B} (n : HLevel)
+       → Iso (PathP (λ i → ∥ A' i ∥ suc n) ∣ a ∣ ∣ b ∣) (∥ PathP (λ i → A' i) a b ∥ n)
+  lem A = J> PathIdTruncIso
 
 PathIdTrunc : {a b : A} (n : HLevel) → (Path (∥ A ∥ (suc n)) ∣ a ∣ ∣ b ∣) ≡ (∥ a ≡ b ∥ n)
 PathIdTrunc n = isoToPath (PathIdTruncIso n)

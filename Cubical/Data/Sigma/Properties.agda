@@ -15,10 +15,6 @@ Basic properties about Σ-types
 {-# OPTIONS --safe #-}
 module Cubical.Data.Sigma.Properties where
 
-open import Cubical.Data.Sigma.Base
-
-open import Cubical.Core.Everything
-
 open import Cubical.Foundations.Prelude
 open import Cubical.Foundations.Function
 open import Cubical.Foundations.Isomorphism
@@ -28,9 +24,12 @@ open import Cubical.Foundations.GroupoidLaws
 open import Cubical.Foundations.Path
 open import Cubical.Foundations.Transport
 open import Cubical.Foundations.Univalence
-open import Cubical.Relation.Nullary
+
+open import Cubical.Data.Sigma.Base
 open import Cubical.Data.Unit.Base
 open import Cubical.Data.Empty.Base
+
+open import Cubical.Relation.Nullary
 
 open import Cubical.Reflection.StrictEquiv
 
@@ -91,6 +90,9 @@ module _ {A : I → Type ℓ} {B : (i : I) → A i → Type ℓ'}
 ×≡Prop : isProp A' → {u v : A × A'} → u .fst ≡ v .fst → u ≡ v
 ×≡Prop pB {u} {v} p i = (p i) , (pB (u .snd) (v .snd) i)
 
+×≡Prop' : isProp A → {u v : A × A'} → u .snd ≡ v .snd → u ≡ v
+×≡Prop' pA {u} {v} p i = (pA (u .fst) (v .fst) i) , p i
+
 -- Useful lemma to prove unique existence
 uniqueExists : (a : A) (b : B a) (h : (a' : A) → isProp (B a')) (H : (a' : A) → B a' → a ≡ a') → ∃![ a ∈ A ] B a
 fst (uniqueExists a b h H) = (a , b)
@@ -136,11 +138,23 @@ inv lUnit×Iso = tt ,_
 rightInv lUnit×Iso _ = refl
 leftInv lUnit×Iso _ = refl
 
+lUnit*×Iso : ∀{ℓ} → Iso (Unit* {ℓ} × A) A
+fun lUnit*×Iso = snd
+inv lUnit*×Iso = tt* ,_
+rightInv lUnit*×Iso _ = refl
+leftInv lUnit*×Iso _ = refl
+
 rUnit×Iso : Iso (A × Unit) A
 fun rUnit×Iso = fst
 inv rUnit×Iso = _, tt
 rightInv rUnit×Iso _ = refl
 leftInv rUnit×Iso _ = refl
+
+rUnit*×Iso : ∀{ℓ} → Iso (A × Unit* {ℓ}) A
+fun rUnit*×Iso = fst
+inv rUnit*×Iso = _, tt*
+rightInv rUnit*×Iso _ = refl
+leftInv rUnit*×Iso _ = refl
 
 module _ {A : Type ℓ} {A' : Type ℓ'} where
   Σ-swap-Iso : Iso (A × A') (A' × A)
@@ -152,7 +166,7 @@ module _ {A : Type ℓ} {A' : Type ℓ'} where
   unquoteDecl Σ-swap-≃ = declStrictIsoToEquiv Σ-swap-≃ Σ-swap-Iso
 
 module _ {A : Type ℓ} {B : A → Type ℓ'} {C : ∀ a → B a → Type ℓ''} where
-  Σ-assoc-Iso : Iso (Σ[ (a , b) ∈ Σ A B ] C a b) (Σ[ a ∈ A ] Σ[ b ∈ B a ] C a b)
+  Σ-assoc-Iso : Iso (Σ[ a ∈ Σ A B ] C (fst a) (snd a)) (Σ[ a ∈ A ] Σ[ b ∈ B a ] C a b)
   fun Σ-assoc-Iso ((x , y) , z) = (x , (y , z))
   inv Σ-assoc-Iso (x , (y , z)) = ((x , y) , z)
   rightInv Σ-assoc-Iso _ = refl
@@ -167,6 +181,15 @@ module _ {A : Type ℓ} {B : A → Type ℓ'} {C : ∀ a → B a → Type ℓ''}
   leftInv Σ-Π-Iso _     = refl
 
   unquoteDecl Σ-Π-≃ = declStrictIsoToEquiv Σ-Π-≃ Σ-Π-Iso
+
+module _ {A : Type ℓ} {B : A → Type ℓ'} {B' : ∀ a → Type ℓ''} where
+  Σ-assoc-swap-Iso : Iso (Σ[ a ∈ Σ A B ] B' (fst a)) (Σ[ a ∈ Σ A B' ] B (fst a))
+  fun Σ-assoc-swap-Iso ((x , y) , z) = ((x , z) , y)
+  inv Σ-assoc-swap-Iso ((x , z) , y) = ((x , y) , z)
+  rightInv Σ-assoc-swap-Iso _ = refl
+  leftInv Σ-assoc-swap-Iso _  = refl
+
+  unquoteDecl Σ-assoc-swap-≃ = declStrictIsoToEquiv Σ-assoc-swap-≃ Σ-assoc-swap-Iso
 
 Σ-cong-iso-fst : (isom : Iso A A') → Iso (Σ A (B ∘ fun isom)) (Σ A' B)
 fun (Σ-cong-iso-fst isom) x = fun isom (x .fst) , x .snd
@@ -307,7 +330,7 @@ snd (leftInv (Σ-contractFstIso {B = B} c) p j) =
 -- a special case of the above
 module _ (A : Unit → Type ℓ) where
   ΣUnit : Σ Unit A ≃ A tt
-  unquoteDef ΣUnit = defStrictEquiv ΣUnit snd (λ { x → (tt , x) })
+  unquoteDef ΣUnit = defStrictEquiv {B = A tt} ΣUnit snd (tt ,_)
 
 Σ-contractSnd : ((a : A) → isContr (B a)) → Σ A B ≃ A
 Σ-contractSnd c = isoToEquiv isom
@@ -356,6 +379,10 @@ snd (ΣPathPProp {B = B} {u = u} {v = v} pB p i) = lem i
   where
   lem : PathP (λ i → B i (p i)) (snd u) (snd v)
   lem = toPathP (pB _ _ _)
+
+discreteΣProp : Discrete A → ((x : A) → isProp (B x)) → Discrete (Σ A B)
+discreteΣProp _≟_ isPropA _ _ =
+  EquivPresDec (Σ≡PropEquiv isPropA) (_ ≟ _)
 
 ≃-× : ∀ {ℓ'' ℓ'''} {A : Type ℓ} {B : Type ℓ'} {C : Type ℓ''} {D : Type ℓ'''} → A ≃ C → B ≃ D → A × B ≃ C × D
 ≃-× eq1 eq2 =
@@ -421,6 +448,13 @@ module _ (A : ⊥ → Type ℓ) where
   ΣEmpty : Σ ⊥ A ≃ ⊥
   ΣEmpty = isoToEquiv ΣEmptyIso
 
+module _ {ℓ : Level} (A : ⊥* {ℓ} → Type ℓ) where
+
+  open Iso
+
+  ΣEmpty*Iso : Iso (Σ ⊥* A) ⊥*
+  fun ΣEmpty*Iso (* , _) = *
+
 -- fiber of projection map
 
 module _
@@ -446,3 +480,13 @@ module _
 
     fiberProjEquiv : B a ≃ fiber proj a
     fiberProjEquiv = isoToEquiv fiberProjIso
+
+separatedΣ : Separated A → ((a : A) → Separated (B a)) → Separated (Σ A B)
+separatedΣ {B = B} sepA sepB (a , b) (a' , b') p = ΣPathTransport→PathΣ _ _ (pA , pB)
+  where
+    pA : a ≡ a'
+    pA = sepA a a' (λ q → p (λ r → q (cong fst r)))
+
+    pB : subst B pA b ≡ b'
+    pB = sepB _ _ _ (λ q → p (λ r → q (cong (λ r' → subst B r' b)
+                                (Separated→isSet sepA _ _ pA (cong fst r)) ∙ snd (PathΣ→ΣPathTransport _ _ r))))

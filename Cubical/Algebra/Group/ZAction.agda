@@ -1,7 +1,7 @@
 -- Left ℤ-multiplication on groups and some of its properties
 
 -- TODO: lots of the content here should be moved elsewhere
-{-# OPTIONS --safe --experimental-lossy-unification #-}
+{-# OPTIONS --safe --lossy-unification #-}
 module Cubical.Algebra.Group.ZAction where
 
 open import Cubical.Foundations.Prelude
@@ -12,9 +12,9 @@ open import Cubical.Foundations.HLevels
 open import Cubical.Foundations.Powerset
 
 open import Cubical.Data.Sigma
-open import Cubical.Data.Int
+open import Cubical.Data.Int as ℤ
   renaming
-    (_·_ to _*_ ; _+_ to _+ℤ_ ; _-_ to _-ℤ_ ; pos·pos to pos·) hiding (·Assoc)
+    (_·_ to _*_ ; _+_ to _+ℤ_ ; _-_ to _-ℤ_ ; pos·pos to pos·) hiding (·Assoc; ·IdL; ·IdR)
 open import Cubical.Data.Nat renaming (_·_ to _·ℕ_ ; _+_ to _+ℕ_)
 open import Cubical.Data.Nat.Mod
 open import Cubical.Data.Nat.Order
@@ -161,6 +161,17 @@ module _ (G : Group ℓ) (g : fst G) where
     ∙∙ cong (snd G · inv (snd G) g)
             (cong (_ℤ[ G ]· g) (+Comm y (negsuc n)) ∙ distrℤ· (negsuc n) y)
      ∙ (·Assoc (snd G) _ _ _)
+
+ℤ·-negsuc : ∀ {ℓ} (G : Group ℓ) (a : ℕ) (g : fst G)
+  → (negsuc a ℤ[ G ]· g)
+   ≡ GroupStr.inv (snd G) ((pos (suc a)) ℤ[ G ]· g)
+ℤ·-negsuc G zero g =
+  sym (cong (GroupStr.inv (snd G))
+      (GroupStr.·IdR (snd G) _))
+ℤ·-negsuc G (suc a) g =
+    (distrℤ· G g (negsuc a) (negsuc zero))
+  ∙ cong₂ (GroupStr._·_ (snd G)) (ℤ·-negsuc G a g) refl
+  ∙ sym (GroupTheory.invDistr G g ((pos (suc a)) ℤ[ G ]· g))
 
 GroupHomℤ→ℤpres- : (e : GroupHom ℤGroup ℤGroup) (a : ℤ)
                   → fst e (- a) ≡ - fst e a
@@ -410,7 +421,7 @@ characℤ≅ℤ e =
     (λ p → inr (Σ≡Prop (λ _ → isPropIsGroupHom _ _)
                   (Σ≡Prop (λ _ → isPropIsEquiv _)
                     (funExt λ x →
-                      cong (fst (fst e)) (sym (·Rid x))
+                      cong (fst (fst e)) (sym (ℤ.·IdR x))
                       ∙ GroupHomℤ→ℤPres· ((fst (fst e)) , (snd e)) x 1
                       ∙ cong (x *_) p
                       ∙ ·Comm x -1 ))))
@@ -709,7 +720,7 @@ GroupEquiv-abstractℤ/abs-gen G H L e r f g ex n p = main
            (sym (cong predℤ (p ∙ negsuc·negsuc n₁ (suc n)
           ∙ sym (pos· (suc n₁) (suc (suc n))))))))
 
-1∈Im→isEquiv : ∀ (G : Group₀) (e : GroupEquiv ℤGroup G)
+1∈Im→isEquiv : (G : Group₀) (e : GroupEquiv ℤGroup G)
        → (h : GroupHom G ℤGroup)
        → isInIm (_ , snd h) 1
        → isEquiv (fst h)
@@ -719,3 +730,19 @@ GroupEquiv-abstractℤ/abs-gen G H L e r f g ex n p = main
        → isInIm (_ , snd h) 1
        → isEquiv (fst h))
     1∈Im→isEquivℤ
+
+gen∈Im→isEquiv : ∀ (G : Group₀) (e : GroupEquiv ℤGroup G)
+          (H : Group₀) (e' : GroupEquiv ℤGroup H)
+       → (h₀ : fst H)
+       → 1 ≡ invEq (fst e') h₀
+       → (h : GroupHom G H)
+       → isInIm (_ , snd h) h₀
+       → isEquiv (fst h)
+gen∈Im→isEquiv G e H =
+  GroupEquivJ (λ H e'
+    → (h₀ : fst H)
+       → 1 ≡ invEq (fst e') h₀
+       → (h : GroupHom G H)
+       → isInIm (_ , snd h) h₀
+       → isEquiv (fst h))
+     (J> 1∈Im→isEquiv G e)

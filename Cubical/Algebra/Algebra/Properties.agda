@@ -39,12 +39,11 @@ module AlgebraTheory (R : Ring ℓ) (A : Algebra R ℓ') where
   open RingStr (snd R) renaming (_+_ to _+r_ ; _·_ to _·r_)
   open AlgebraStr (A .snd)
 
-  0-actsNullifying : (x : ⟨ A ⟩) → 0r ⋆ x ≡ 0a
-  0-actsNullifying x =
-    let idempotent-+ = 0r ⋆ x              ≡⟨ cong (λ u → u ⋆ x) (sym (RingTheory.0Idempotent R)) ⟩
-                       (0r +r 0r) ⋆ x      ≡⟨ ⋆DistL+ 0r 0r x ⟩
-                       (0r ⋆ x) + (0r ⋆ x) ∎
-    in RingTheory.+Idempotency→0 (Algebra→Ring A) (0r ⋆ x) idempotent-+
+  ⋆AnnihilL : (x : ⟨ A ⟩) → 0r ⋆ x ≡ 0a
+  ⋆AnnihilL = ModuleTheory.⋆AnnihilL R (Algebra→Module A)
+
+  ⋆AnnihilR : (r : ⟨ R ⟩) → r ⋆ 0a ≡ 0a
+  ⋆AnnihilR = ModuleTheory.⋆AnnihilR R (Algebra→Module A)
 
   ⋆Dist· : (x y : ⟨ R ⟩) (a b : ⟨ A ⟩) → (x ·r y) ⋆ (a · b) ≡ (x ⋆ a) · (y ⋆ b)
   ⋆Dist· x y a b = (x ·r y) ⋆ (a · b) ≡⟨ ⋆AssocR _ _ _ ⟩
@@ -86,7 +85,8 @@ module AlgebraHoms where
   compAlgebraHom f g .fst = g .fst ∘ f .fst
   compAlgebraHom f g .snd = compIsAlgebraHom (g .snd) (f .snd)
 
-  syntax compAlgebraHom f g = g ∘a f
+  _∘a_ : AlgebraHom B C → AlgebraHom A B → AlgebraHom A C
+  _∘a_ = flip compAlgebraHom
 
   compIdAlgebraHom : (φ : AlgebraHom A B) → compAlgebraHom (idAlgebraHom A) φ ≡ φ
   compIdAlgebraHom φ = AlgebraHom≡ refl

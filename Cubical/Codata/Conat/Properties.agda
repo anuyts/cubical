@@ -33,8 +33,6 @@ open import Cubical.Data.Bool
 import Cubical.Data.Nat as Nat
 import Cubical.Data.Nat.Order.Recursive as Nat
 
-open import Cubical.Core.Everything
-
 open import Cubical.Functions.Embedding
 
 open import Cubical.Foundations.Prelude
@@ -152,7 +150,7 @@ module IsSet where
   force (≡-stable ¬¬p i) = ≡′-stable (λ ¬p → ¬¬p (λ p → ¬p (cong force p))) i
   ≡′-stable {zero}  {zero}  ¬¬p′ = refl
   ≡′-stable {suc x} {suc y} ¬¬p′ =
-     cong′ suc (≡-stable λ ¬p → ¬¬p′ λ p → ¬p (cong pred′′ p))
+     congS suc (≡-stable λ ¬p → ¬¬p′ λ p → ¬p (cong pred′′ p))
   ≡′-stable {zero}  {suc y} ¬¬p′ = ⊥.rec (¬¬p′ conat-absurd)
   ≡′-stable {suc x} {zero}  ¬¬p′ = ⊥.rec (¬¬p′ λ p → conat-absurd (sym p))
 

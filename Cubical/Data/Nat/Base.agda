@@ -1,8 +1,6 @@
 {-# OPTIONS --no-exact-split --safe #-}
 module Cubical.Data.Nat.Base where
 
-open import Cubical.Core.Primitives
-
 open import Agda.Builtin.Nat public
   using (zero; suc; _+_)
   renaming (Nat to ℕ; _-_ to _∸_; _*_ to _·_)
@@ -12,6 +10,7 @@ open import Cubical.Data.Bool.Base
 open import Cubical.Data.Sum.Base hiding (elim)
 open import Cubical.Data.Empty.Base hiding (elim)
 open import Cubical.Data.Unit.Base
+open import Cubical.Data.Sigma.Base
 
 predℕ : ℕ → ℕ
 predℕ zero = zero
@@ -77,3 +76,13 @@ isZero (suc n) = false
 _^_ : ℕ → ℕ → ℕ
 m ^ 0 = 1
 m ^ (suc n) = m · m ^ n
+
+
+-- Iterated product
+_ˣ_ : ∀ {ℓ} (A : ℕ → Type ℓ) (n : ℕ) → Type ℓ
+A ˣ zero = A zero
+A ˣ suc n = (A ˣ n) × A (suc n)
+
+0ˣ : ∀ {ℓ} (A : ℕ → Type ℓ) (0A : (n : ℕ) → A n) → (n : ℕ) → A ˣ n
+0ˣ A 0A zero = 0A zero
+0ˣ A 0A (suc n) = (0ˣ A 0A n) , (0A (suc n))

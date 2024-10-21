@@ -28,7 +28,7 @@ open import Cubical.Core.Primitives public
 infixr 30 _∙_
 infixr 30 _∙₂_
 infix  3 _∎
-infixr 2 _≡⟨_⟩_ _≡⟨⟩_
+infixr 2 step-≡ _≡⟨⟩_
 infixr 2.5 _≡⟨_⟩≡⟨_⟩_
 infixl 4 _≡$_ _≡$S_
 
@@ -87,6 +87,16 @@ cong₂ : {C : (a : A) → (b : B a) → Type ℓ} →
 cong₂ f p q i = f (p i) (q i)
 {-# INLINE cong₂ #-}
 
+cong₃ : {C : (a : A) → (b : B a) → Type ℓ}
+        {D : (a : A) (b : B a) → C a b → Type ℓ'}
+        (f : (a : A) (b : B a) (c : C a b) → D a b c) →
+        {x y : A} (p : x ≡ y)
+        {u : B x} {v : B y} (q : PathP (λ i → B (p i)) u v)
+        {s : C x u} {t : C y v} (r : PathP (λ i → C (p i) (q i)) s t)
+      → PathP (λ i → D (p i) (q i) (r i)) (f x u s) (f y v t)
+cong₃ f p q r i = f (p i) (q i) (r i)
+{-# INLINE cong₃ #-}
+
 congP₂ : {A : I → Type ℓ} {B : (i : I) → A i → Type ℓ'}
   {C : (i : I) (a : A i) → B i a → Type ℓ''}
   (f : (i : I) → (a : A i) → (b : B i a) → C i a b)
@@ -95,6 +105,16 @@ congP₂ : {A : I → Type ℓ} {B : (i : I) → A i → Type ℓ'}
   → PathP (λ i → C i (p i) (q i)) (f i0 x u) (f i1 y v)
 congP₂ f p q i = f i (p i) (q i)
 {-# INLINE congP₂ #-}
+
+congL : {C : Type ℓ} (f : (a : A) → C → B a) (p : x ≡ y)
+        → {z : C} → PathP (λ i → B (p i)) (f x z) (f y z)
+congL f p {z} i = f (p i) z
+{-# INLINE congL #-}
+
+congR : {C : Type ℓ} (f : C → (a : A) → B a) (p : x ≡ y)
+        → {z : C} → PathP (λ i → B (p i)) (f z x) (f z y)
+congR f p {z} i = f z (p i)
+{-# INLINE congR #-}
 
 {- The most natural notion of homogenous path composition
     in a cubical setting is double composition:
@@ -110,12 +130,12 @@ congP₂ f p q i = f i (p i) (q i)
    `doubleCompPath-filler p q r` gives the whole square
 -}
 
-doubleComp-faces : {x y z w : A } (p : x ≡ y) (r : z ≡ w)
+doubleComp-faces : {x y z w : A} (p : x ≡ y) (r : z ≡ w)
                  → (i : I) (j : I) → Partial (i ∨ ~ i) A
 doubleComp-faces p r i j (i = i0) = p (~ j)
 doubleComp-faces p r i j (i = i1) = r j
 
-_∙∙_∙∙_ : w ≡ x → x ≡ y → y ≡ z → w ≡ z
+_∙∙_∙∙_ : x ≡ y → y ≡ z → z ≡ w → x ≡ w
 (p ∙∙ q ∙∙ r) i =
   hcomp (doubleComp-faces p r i) (q i)
 
@@ -171,6 +191,16 @@ compPath-filler' {z = z} p q j i =
                  ; (i = i1) → q k
                  ; (j = i0) → q (i ∧ k) })
         (p (i ∨ ~ j))
+
+compPath-filler'' : (p : x ≡ y) (q : y ≡ z)
+    → PathP (λ i → p (~ i) ≡ q i) refl (p ∙ q)
+compPath-filler'' p q i j =
+  hcomp (λ k → λ {(i = i0) → p i1
+                 ; (i = i1) → compPath-filler p q k j
+                 ; (j = i0) → p (~ i)
+                 ; (j = i1) → q (i ∧ k)})
+        (p (~ i ∨ j))
+
 -- Note: We can omit a (j = i1) case here since when (j = i1), the whole expression is
 --  definitionally equal to `p ∙ q`. (Notice that `p ∙ q` is also an hcomp.) Nevertheless,
 --  we could have given `compPath-filler p q k i` as the (j = i1) case.
@@ -233,13 +263,16 @@ compPathP'-filler {B = B} {x' = x'} {p = p} {q = q} P Q j i =
 
 -- Syntax for chains of equational reasoning
 
-_≡⟨_⟩_ : (x : A) → x ≡ y → y ≡ z → x ≡ z
-_ ≡⟨ x≡y ⟩ y≡z = x≡y ∙ y≡z
+step-≡ : (x : A) → y ≡ z → x ≡ y → x ≡ z
+step-≡ _ p q = q ∙ p
 
-≡⟨⟩-syntax : (x : A) → x ≡ y → y ≡ z → x ≡ z
-≡⟨⟩-syntax = _≡⟨_⟩_
+syntax step-≡ x y p = x ≡⟨ p ⟩ y
+
+≡⟨⟩-syntax : (x : A) → y ≡ z → x ≡ y → x ≡ z
+≡⟨⟩-syntax = step-≡
+
 infixr 2 ≡⟨⟩-syntax
-syntax ≡⟨⟩-syntax x (λ i → B) y = x ≡[ i ]⟨ B ⟩ y
+syntax ≡⟨⟩-syntax x y (λ i → B) = x ≡[ i ]⟨ B ⟩ y
 
 _≡⟨⟩_ : (x : A) → x ≡ y → x ≡ y
 _ ≡⟨⟩ x≡y = x≡y
@@ -285,6 +318,11 @@ subst-filler : (B : A → Type ℓ') (p : x ≡ y) (b : B x)
   → PathP (λ i → B (p i)) b (subst B p b)
 subst-filler B p = transport-filler (cong B p)
 
+subst2-filler : {B : Type ℓ'} {z w : B} (C : A → B → Type ℓ'')
+                (p : x ≡ y) (q : z ≡ w) (c : C x z)
+              → PathP (λ i → C (p i) (q i)) c (subst2 C p q c)
+subst2-filler C p q = transport-filler (cong₂ C p q)
+
 -- Function extensionality
 
 funExt : {B : A → I → Type ℓ'}
@@ -309,6 +347,18 @@ funExt⁻ : {B : A → I → Type ℓ'}
   → ((x : A) → PathP (B x) (f x) (g x))
 funExt⁻ eq x i = eq i x
 
+congP₂$ : {A : I → Type ℓ} {B : ∀ i → A i → Type ℓ'}
+  {f : ∀ x → B i0 x} {g : ∀ y → B i1 y}
+  → (p : PathP (λ i → ∀ x → B i x) f g)
+  → ∀ {x y} (p : PathP A x y) → PathP (λ i → B i (p i)) (f x) (g y)
+congP₂$ eq x i = eq i (x i)
+
+implicitFunExt⁻ : {B : A → I → Type ℓ'}
+  {f : {x : A} → B x i0} {g : {x : A} → B x i1}
+  → PathP (λ i → {x : A} → B x i) f g
+  → ({x : A} → PathP (B x) (f {x}) (g {x}))
+implicitFunExt⁻ eq {x} i = eq i {x}
+
 _≡$_ = funExt⁻
 
 {- `S` stands for simply typed. Using `funExtS⁻` instead of `funExt⁻`
@@ -325,6 +375,7 @@ _≡$S_ = funExtS⁻
 -- J for paths and its computation rule
 
 module _ (P : ∀ y → x ≡ y → Type ℓ') (d : P x refl) where
+
   J : (p : x ≡ y) → P y p
   J p = transport (λ i → P (p i) (λ j → p (i ∧ j))) d
 
@@ -340,6 +391,16 @@ module _ (P : ∀ y → x ≡ y → Type ℓ') (d : P x refl) where
       (J (λ j → compPath-filler p q (~ k) j))
 
 -- Multi-variable versions of J
+
+module _ {b : B x}
+  (P : (y : A) (p : x ≡ y) (z : B y) (q : PathP (λ i → B (p i)) b z) → Type ℓ'')
+  (d : P _ refl _ refl) where
+
+  JDep : {y : A} (p : x ≡ y) {z : B y} (q : PathP (λ i → B (p i)) b z) → P _ p _ q
+  JDep _ q = transport (λ i → P _ _ _ (λ j → q (i ∧ j))) d
+
+  JDepRefl : JDep refl refl ≡ d
+  JDepRefl = transportRefl d
 
 module _ {x : A}
   {P : (y : A) → x ≡ y → Type ℓ'} {d : (y : A) (p : x ≡ y) → P y p}
@@ -359,6 +420,7 @@ module _ {x : A}
 -- A prefix operator version of J that is more suitable to be nested
 
 module _ {P : ∀ y → x ≡ y → Type ℓ'} (d : P x refl) where
+
   J>_ : ∀ y → (p : x ≡ y) → P y p
   J>_ _ p = transport (λ i → P (p i) (λ j → p (i ∧ j))) d
 
@@ -473,7 +535,10 @@ Cube :
 Cube a₀₋₋ a₁₋₋ a₋₀₋ a₋₁₋ a₋₋₀ a₋₋₁ =
   PathP (λ i → Square (a₋₀₋ i) (a₋₁₋ i) (a₋₋₀ i) (a₋₋₁ i)) a₀₋₋ a₁₋₋
 
--- Vertical composition of squares
+-- See HLevels.agda for CubeP
+
+-- Horizontal composition of squares (along their second dimension)
+-- See Cubical.Foundations.Path for vertical composition
 
 _∙₂_ :
   {a₀₀ a₀₁ a₀₂ : A} {a₀₋ : a₀₀ ≡ a₀₁} {b₀₋ : a₀₁ ≡ a₀₂}
@@ -569,3 +634,7 @@ open Lift public
 
 liftExt : ∀ {A : Type ℓ} {a b : Lift {ℓ} {ℓ'} A} → (lower a ≡ lower b) → a ≡ b
 liftExt x i = lift (x i)
+
+liftFun : ∀ {ℓ ℓ' ℓ'' ℓ'''} {A : Type ℓ} {B : Type ℓ'}
+  (f : A → B) → Lift {j = ℓ''} A → Lift {j = ℓ'''} B
+liftFun f (lift a) = lift (f a)
