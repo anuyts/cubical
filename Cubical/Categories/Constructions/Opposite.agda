@@ -24,6 +24,7 @@ module _ {C : Category ℓC ℓC'} (isUnivC : isUnivalent C) where
     J (λ y p → op-Iso (pathToIso {C = C} p) ≡ pathToIso {C = C ^op} p)
       (CatIso≡ _ _ refl)
 
+{-
   op-Iso-pathToIso' : ∀ {x y : C .ob} (p : x ≡ y)
                    → op-Iso (pathToIso {C = C ^op} p) ≡ pathToIso {C = C} p
   op-Iso-pathToIso' =
@@ -38,3 +39,4 @@ module _ {C : Category ℓC ℓC'} (isUnivC : isUnivalent C) where
         (cong op-Iso ((secEq (univEquiv isUnivC _ _) (op-Iso f^op))))))
     , λ p → cong (CatIsoToPath isUnivC) (op-Iso-pathToIso' p)
         ∙ retEq (univEquiv isUnivC _ _) p)
+-}
